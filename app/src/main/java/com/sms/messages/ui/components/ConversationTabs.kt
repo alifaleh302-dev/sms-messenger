@@ -1,6 +1,8 @@
 package com.sms.messages.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,7 +79,10 @@ private fun TabChip(
     val container = if (selected) {
         MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.surfaceVariant
+        // An unselected chip sits on the page, and a page-coloured fill is no boundary at
+        // all: the strip then reads as loose text with uneven gaps. Following the platform's
+        // outlined-chip convention, the unselected state is carried by its border instead.
+        Color.Transparent
     }
     val content = if (selected) {
         MaterialTheme.colorScheme.onPrimary
@@ -88,6 +93,7 @@ private fun TabChip(
     Surface(
         shape = RoundedCornerShape(50),
         color = container,
+        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         Row(
@@ -148,7 +154,7 @@ private fun AddTabChip(onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

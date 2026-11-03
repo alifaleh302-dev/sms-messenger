@@ -1,5 +1,6 @@
 package com.sms.messages.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,6 +43,7 @@ import com.sms.messages.data.MessageEntity
 import com.sms.messages.data.MessageStatus
 import com.sms.messages.data.MessageType
 import com.sms.messages.data.ReactionEntity
+import com.sms.messages.ui.theme.LocalBubblePalette
 import com.sms.messages.util.TimeFormat
 
 /**
@@ -65,13 +67,14 @@ fun MessageBubble(
     onToggleSelect: () -> Unit = {},
 ) {
     val outgoing = message.type != MessageType.INBOX
+    val bubblePalette = LocalBubblePalette.current
     val container = if (outgoing) {
-        MaterialTheme.colorScheme.primary
+        bubblePalette.outgoing
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
     val contentColor = if (outgoing) {
-        MaterialTheme.colorScheme.onPrimary
+        bubblePalette.onOutgoing
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -101,11 +104,15 @@ fun MessageBubble(
         ) {
             Surface(
                 onClick = { if (selectionMode) onToggleSelect() else onLongPress() },
-                modifier = Modifier
-                    .widthIn(max = 320.dp)
-                    .fillMaxWidth(0.86f),
+                // The bubble hugs its text and only stops growing at the cap, so a short
+                // "ok" stays short instead of stretching to a fixed fraction of the column.
+                modifier = Modifier.widthIn(max = 320.dp),
                 shape = shape,
                 color = container,
+                // An incoming bubble is a near-page grey on a near-page background, which
+                // is only about 1.2:1, so two messages in a row merge into one block. The
+                // outgoing bubble needs nothing: its fill is the strong brand blue.
+                border = if (outgoing) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Column(Modifier.padding(horizontal = 14.dp, vertical = 9.dp)) {
                     if (quoted != null) {

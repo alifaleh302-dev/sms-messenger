@@ -133,6 +133,12 @@ dependencies {
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.sqlite)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Screenshot tests: Robolectric renders real pixels through native Skia, and the
+    // compose test rule supplies the layout pass that produces the bitmap.
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+    testImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
