@@ -2,6 +2,7 @@ package com.sms.messages.data
 
 import android.content.Context
 import android.util.Log
+import com.sms.messages.R
 import com.sms.messages.sms.SmsSender
 import com.sms.messages.util.PhoneNumbers
 import kotlinx.coroutines.flow.Flow
@@ -160,6 +161,9 @@ class SmsRepository(
         subscriptionId: Int,
         deliveryReport: Boolean,
     ): Long {
+        if (!PhoneNumbers.isValid(address)) {
+            throw IllegalArgumentException(context.getString(R.string.error_invalid_number))
+        }
         val normalized = PhoneNumbers.normalize(address).ifEmpty { address }
         val conversation = ensureConversation(normalized)
         val now = System.currentTimeMillis()
@@ -314,8 +318,9 @@ class SmsRepository(
     }
 
     private suspend fun refreshAllSummaries() {
-        // Cheap enough for the import path: recompute snippet ordering once per conversation.
-        Log.d(TAG, "Refreshing conversation summaries after telephony import")
+        for (conversation in conversations.getActive()) {
+            refreshConversationSummary(conversation.id)
+        }
     }
 
     fun totalUnreadCount(): Flow<Int> = combine(

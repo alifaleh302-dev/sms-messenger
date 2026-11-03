@@ -4,7 +4,6 @@
 
     <string name="tab_chats">المحادثات</string>
     <string name="tab_archived">المؤرشفة</string>
-    <string name="tab_blocked">المحظورة</string>
     <string name="tab_templates">القوالب</string>
     <string name="tab_scheduled">المجدولة</string>
     <string name="tab_settings">الإعدادات</string>
@@ -21,14 +20,10 @@
     <string name="action_copy">نسخ</string>
     <string name="action_call">اتصال</string>
     <string name="action_save">حفظ</string>
-    <string name="action_close">إغلاق</string>
     <string name="action_retry">إعادة المحاولة</string>
-    <string name="action_forward">إعادة توجيه</string>
-    <string name="action_add">إضافة</string>
     <string name="action_pin">تثبيت</string>
     <string name="action_unpin">إلغاء التثبيت</string>
     <string name="action_mark_read">تحديد كمقروء</string>
-    <string name="action_select_all">تحديد الكل</string>
 
     <string name="empty_conversations">لا توجد محادثات بعد</string>
     <string name="empty_conversations_hint">ابدأ محادثة جديدة من زر الإنشاء.</string>
@@ -45,13 +40,8 @@
     <string name="message_failed">لم يتم الإرسال. اضغط لإعادة المحاولة.</string>
     <string name="message_queued">في الانتظار</string>
     <string name="unknown_contact">غير معروف</string>
-    <string name="attachment_image">صورة</string>
-    <string name="attachment_video">فيديو</string>
-    <string name="attachment_audio">صوت</string>
-    <string name="attachment_vcard">جهة اتصال</string>
 
     <string name="new_message_title">رسالة جديدة</string>
-    <string name="recipient_hint">إلى</string>
     <string name="search_contacts_hint">ابحث بالاسم أو الرقم</string>
     <string name="invalid_recipient">أدخل رقم هاتف صحيح</string>
     <string name="add_contacts_permission">اسمح بالوصول لجهات الاتصال لاختيار المستلمين بالاسم</string>
@@ -59,7 +49,6 @@
     <string name="schedule_message">جدولة</string>
     <string name="schedule_title">جدولة رسالة</string>
     <string name="scheduled_cancel">إلغاء الجدولة</string>
-    <string name="scheduled_sent_ok">تمت جدولة الرسالة</string>
 
     <string name="templates_title">القوالب</string>
     <string name="template_new">قالب جديد</string>
@@ -110,5 +99,39 @@
     <string name="error_no_telephony">هذا الجهاز لا يدعم إرسال الرسائل</string>
     <string name="error_sim_missing">لا توجد شريحة SIM</string>
     <string name="error_invalid_number">رقم هاتف غير صحيح</string>
-    <string name="error_attachment_too_large">المرفق كبير جداً للإرسال</string>
+
+    <string name="action_back">رجوع</string>
+    <string name="action_more">خيارات أخرى</string>
+    <string name="action_edit">تعديل</string>
+    <string name="action_open">فتح</string>
+    <string name="action_restore">استعادة</string>
+    <string name="action_next">التالي</string>
+    <string name="action_mute">كتم</string>
+    <string name="action_unmute">إلغاء الكتم</string>
+    <string name="action_delete_conversation">حذف المحادثة</string>
+    <string name="action_manage_blocked">إدارة الأرقام المحظورة</string>
+    <string name="action_search_all">بحث في كل الرسائل</string>
+    <string name="archived_count">المؤرشفة (%1$d)</string>
+    <string name="state_blocked">محظور</string>
+    <string name="empty_templates_hint">احفظ الردود المتكررة وأعد استخدامها أثناء الكتابة.</string>
+    <string name="empty_scheduled_hint">اختر التاريخ والوقت أثناء الكتابة لجدولة الرسالة.</string>
+    <string name="search_min_chars">اكتب حرفين على الأقل</string>
+    <string name="scheduled_for">مجدولة في %1$s</string>
+    <string name="scheduled_sends_at">تُرسل %1$s</string>
+    <string name="blocked_hint">يتم تجاهل الرسائل الواردة من الأرقام المحظورة ولا تُحفظ.</string>
+    <string name="blocked_number_hint">رقم الهاتف</string>
+    <string name="settings_blocked">الأرقام المحظورة</string>
+    <string name="settings_history">السجل</string>
+    <string name="settings_history_summary">استورد الرسائل التي حفظها النظام قبل تعيين هذا التطبيق كافتراضي.</string>
+    <string name="settings_import">استيراد الرسائل</string>
+    <string name="settings_sending">الإرسال</string>
+    <string name="settings_about_summary">تطبيق رسائل متكامل: المحادثات، تقارير التسليم، الرسائل المجدولة، القوالب، الحظر والبحث.</string>
+    <string name="settings_import_result">تم استيراد %1$d رسالة</string>
+    <string name="settings_import_none">لا يوجد جديد للاستيراد</string>
+    <string name="error_add_recipient">أضف مستلماً واحداً على الأقل</string>
+    <string name="error_message_empty">الرسالة فارغة</string>
+    <string name="error_unable_send">تعذر إرسال الرسالة</string>
+    <string name="notification_channel_service">خدمة الخلفية</string>
+
+    <string name="notification_me">أنا</string>
 </resources>

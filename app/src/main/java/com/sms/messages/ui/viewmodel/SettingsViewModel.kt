@@ -3,6 +3,7 @@ package com.sms.messages.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sms.messages.R
 import com.sms.messages.SmsApp
 import com.sms.messages.data.AppLanguage
 import com.sms.messages.data.AppSettings
@@ -56,7 +57,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun importFromTelephony() = viewModelScope.launch {
         val count = app.repository.syncFromTelephony()
-        _message.value = if (count > 0) "Imported $count messages" else "Nothing new to import"
+        _message.value = if (count > 0) {
+            app.getString(R.string.settings_import_result, count)
+        } else {
+            app.getString(R.string.settings_import_none)
+        }
     }
 
     fun clearMessage() {

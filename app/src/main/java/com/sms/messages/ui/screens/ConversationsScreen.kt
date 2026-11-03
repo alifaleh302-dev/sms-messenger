@@ -3,7 +3,6 @@ package com.sms.messages.ui.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,12 +43,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sms.messages.R
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.components.InitialAvatar
 import com.sms.messages.ui.viewmodel.ConversationListItem
@@ -77,10 +78,10 @@ fun ConversationsScreen(
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             trailingIcon = {
                 IconButton(onClick = onOpenSearch) {
-                    Icon(Icons.AutoMirrored.Filled.ManageSearch, contentDescription = "Search all messages")
+                    Icon(Icons.AutoMirrored.Filled.ManageSearch, contentDescription = stringResource(R.string.action_search_all))
                 }
             },
-            placeholder = { Text("Search conversations") },
+            placeholder = { Text(stringResource(R.string.search_hint)) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -94,15 +95,15 @@ fun ConversationsScreen(
             ) {
                 Icon(Icons.Filled.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Archived (${archived.size})")
+                Text(stringResource(R.string.archived_count, archived.size))
             }
         }
 
         if (state.items.isEmpty() && !state.loading) {
             EmptyState(
                 icon = Icons.Filled.ChatBubbleOutline,
-                title = "No conversations yet",
-                hint = "Start a new conversation with the compose button.",
+                title = stringResource(R.string.empty_conversations),
+                hint = stringResource(R.string.empty_conversations_hint),
             )
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -236,32 +237,32 @@ private fun ConversationContextMenu(
     Box(Modifier.fillMaxSize()) {
         DropdownMenu(expanded = true, onDismissRequest = onDismiss) {
             DropdownMenuItem(
-                text = { Text("Archive") },
+                text = { Text(stringResource(R.string.action_archive)) },
                 leadingIcon = { Icon(Icons.Filled.Archive, contentDescription = null) },
                 onClick = onArchive,
             )
             DropdownMenuItem(
-                text = { Text("Mark as read") },
+                text = { Text(stringResource(R.string.action_mark_read)) },
                 leadingIcon = { Icon(Icons.Filled.DoneAll, contentDescription = null) },
                 onClick = onMarkRead,
             )
             DropdownMenuItem(
-                text = { Text(if (item.pinned) "Unpin" else "Pin") },
+                text = { Text(stringResource(if (item.pinned) R.string.action_unpin else R.string.action_pin)) },
                 leadingIcon = { Icon(Icons.Filled.PushPin, contentDescription = null) },
                 onClick = onPin,
             )
             DropdownMenuItem(
-                text = { Text(if (item.muted) "Unmute" else "Mute") },
+                text = { Text(stringResource(if (item.muted) R.string.action_unmute else R.string.action_mute)) },
                 leadingIcon = { Icon(Icons.Filled.NotificationsOff, contentDescription = null) },
                 onClick = onMute,
             )
             DropdownMenuItem(
-                text = { Text("Block number") },
+                text = { Text(stringResource(R.string.action_block)) },
                 leadingIcon = { Icon(Icons.Filled.Block, contentDescription = null) },
                 onClick = onBlock,
             )
             DropdownMenuItem(
-                text = { Text("Delete") },
+                text = { Text(stringResource(R.string.action_delete)) },
                 leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
                 onClick = onDelete,
             )
@@ -277,11 +278,11 @@ fun ArchivedScreen(
 ) {
     val items by viewModel.archived.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = "Archived", onBack = onBack)
+        TopBar(title = stringResource(R.string.tab_archived), onBack = onBack)
         if (items.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.Archive,
-                title = "Nothing archived",
+                title = stringResource(R.string.empty_archived),
             )
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -304,8 +305,8 @@ fun ArchivedScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        TextButton(onClick = { onOpenConversation(item.id) }) { Text("Open") }
-                        TextButton(onClick = { viewModel.unarchive(item.id) }) { Text("Restore") }
+                        TextButton(onClick = { onOpenConversation(item.id) }) { Text(stringResource(R.string.action_open)) }
+                        TextButton(onClick = { viewModel.unarchive(item.id) }) { Text(stringResource(R.string.action_restore)) }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
@@ -330,7 +331,7 @@ fun TopBar(
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.action_back),
                 )
             }
         }

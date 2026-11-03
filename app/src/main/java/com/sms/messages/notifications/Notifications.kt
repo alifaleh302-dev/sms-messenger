@@ -29,7 +29,7 @@ object Notifications {
         val sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val attributes = AudioAttributes.Builder()
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT)
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
             .build()
 
         val messages = NotificationChannel(
@@ -54,7 +54,7 @@ object Notifications {
 
         val service = NotificationChannel(
             CHANNEL_SERVICE,
-            "Background service",
+            context.getString(com.sms.messages.R.string.notification_channel_service),
             NotificationManager.IMPORTANCE_MIN
         ).apply {
             setSound(null, null)

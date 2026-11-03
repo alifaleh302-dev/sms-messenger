@@ -12,11 +12,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
@@ -33,9 +33,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sms.messages.R
 import com.sms.messages.data.TemplateEntity
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.viewmodel.TemplatesViewModel
@@ -50,12 +52,12 @@ fun TemplatesScreen(
     var creating by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = "Templates")
+        TopBar(title = stringResource(R.string.templates_title))
         if (templates.isEmpty()) {
             EmptyState(
                 icon = Icons.AutoMirrored.Filled.TextSnippet,
-                title = "No templates yet",
-                hint = "Save frequently used replies and reuse them while composing.",
+                title = stringResource(R.string.empty_templates),
+                hint = stringResource(R.string.empty_templates_hint),
             )
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -73,10 +75,10 @@ fun TemplatesScreen(
                                     modifier = Modifier.weight(1f),
                                 )
                                 IconButton(onClick = { editing = template }) {
-                                    Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                                    Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.action_edit))
                                 }
                                 IconButton(onClick = { viewModel.delete(template) }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Delete")
+                                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete))
                                 }
                             }
                             Spacer(Modifier.height(4.dp))
@@ -97,7 +99,7 @@ fun TemplatesScreen(
         onClick = { creating = true },
         modifier = Modifier.padding(16.dp),
     ) {
-        Icon(Icons.Filled.Add, contentDescription = "New template")
+        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.template_new))
     }
 
     if (creating || editing != null) {
@@ -124,13 +126,13 @@ private fun TemplateEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (template == null) "New template" else "Edit template") },
+        title = { Text(stringResource(if (template == null) R.string.template_new else R.string.action_edit)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    placeholder = { Text("Title") },
+                    placeholder = { Text(stringResource(R.string.template_title_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -138,7 +140,7 @@ private fun TemplateEditorDialog(
                 OutlinedTextField(
                     value = body,
                     onValueChange = { body = it },
-                    placeholder = { Text("Message text") },
+                    placeholder = { Text(stringResource(R.string.template_body_hint)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(140.dp),
@@ -149,10 +151,10 @@ private fun TemplateEditorDialog(
             TextButton(
                 onClick = { onSave(title, body) },
                 enabled = title.isNotBlank() && body.isNotBlank(),
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }
@@ -165,7 +167,7 @@ fun BlockedScreen(
     var number by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = "Blocked numbers")
+        TopBar(title = stringResource(R.string.settings_blocked))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -176,7 +178,7 @@ fun BlockedScreen(
             OutlinedTextField(
                 value = number,
                 onValueChange = { number = it },
-                placeholder = { Text("Phone number") },
+                placeholder = { Text(stringResource(R.string.blocked_number_hint)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f),
             )
@@ -186,13 +188,13 @@ fun BlockedScreen(
                     number = ""
                 },
                 enabled = number.isNotBlank(),
-            ) { Text("Block") }
+            ) { Text(stringResource(R.string.action_block)) }
         }
         Spacer(Modifier.height(8.dp))
         if (blocked.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.Block,
-                title = "No blocked numbers",
+                title = stringResource(R.string.empty_blocked),
             )
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -216,7 +218,7 @@ fun BlockedScreen(
                         }
                         Spacer(Modifier.width(8.dp))
                         TextButton(onClick = { viewModel.unblock(entry.address) }) {
-                            Text("Unblock")
+                            Text(stringResource(R.string.action_unblock))
                         }
                     }
                 }

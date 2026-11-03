@@ -1,11 +1,8 @@
 package com.sms.messages.notifications
 
-import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
@@ -83,7 +80,9 @@ class MessageNotifier(private val context: Context) {
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(
-                NotificationCompat.MessagingStyle(Person.Builder().setName("Me").build())
+                NotificationCompat.MessagingStyle(
+                Person.Builder().setName(context.getString(R.string.notification_me)).build()
+            )
                     .addMessage(body, System.currentTimeMillis(), person)
             )
             .setContentIntent(content)

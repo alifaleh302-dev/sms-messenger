@@ -4,21 +4,21 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TextSnippet
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -32,6 +32,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -40,6 +42,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.sms.messages.R
+import com.sms.messages.data.AppLanguage
 import com.sms.messages.ui.screens.ArchivedScreen
 import com.sms.messages.ui.screens.BlockedScreen
 import com.sms.messages.ui.screens.ChatScreen
@@ -55,7 +59,7 @@ import com.sms.messages.ui.viewmodel.SettingsViewModel
 import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.Permissions
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -89,6 +93,17 @@ class MainActivity : ComponentActivity() {
                 settingsViewModel.refreshDefaultRole()
             }
 
+            LaunchedEffect(settings.language) {
+                val locales = when (settings.language) {
+                    AppLanguage.SYSTEM -> null
+                    AppLanguage.ENGLISH -> LocaleListCompat.forLanguageTags("en")
+                    AppLanguage.ARABIC -> LocaleListCompat.forLanguageTags("ar")
+                }
+                if (AppCompatDelegate.getApplicationLocales() != locales) {
+                    AppCompatDelegate.setApplicationLocales(locales ?: LocaleListCompat.getEmptyLocaleList())
+                }
+            }
+
             SmsTheme(themeMode = settings.themeMode) {
                 if (hasSms) {
                     MessagesApp(
@@ -98,7 +113,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                     Column(Modifier.fillMaxSize()) {
                         PermissionScreen(
-                            message = "To send and read text messages this app needs SMS permission.",
+                            message = if (hasSms) stringResource(R.string.permission_body) else stringResource(R.string.permission_sms_denied),
                             onRequest = {
                                 requested = true
                                 permissionLauncher.launch(requestedPermissions)
@@ -171,10 +186,10 @@ private fun MessagesApp(
     val currentRoute = backStack?.destination?.route
 
     val tabs = listOf(
-        Triple(Routes.CONVERSATIONS, "Chats", Icons.Filled.ChatBubble),
-        Triple(Routes.SCHEDULED, "Scheduled", Icons.Filled.Schedule),
-        Triple(Routes.TEMPLATES, "Templates", Icons.Filled.TextSnippet),
-        Triple(Routes.SETTINGS, "Settings", Icons.Filled.Settings),
+        Triple(Routes.CONVERSATIONS, R.string.tab_chats, Icons.Filled.ChatBubble),
+        Triple(Routes.SCHEDULED, R.string.tab_scheduled, Icons.Filled.Schedule),
+        Triple(Routes.TEMPLATES, R.string.tab_templates, Icons.AutoMirrored.Filled.TextSnippet),
+        Triple(Routes.SETTINGS, R.string.tab_settings, Icons.Filled.Settings),
     )
 
     LaunchedEffect(initialConversationId, initialAddress) {
@@ -188,7 +203,7 @@ private fun MessagesApp(
         bottomBar = {
             if (currentRoute in tabs.map { it.first }) {
                 NavigationBar {
-                    tabs.forEach { (route, label, icon) ->
+                    tabs.forEach { (route, labelRes, icon) ->
                         NavigationBarItem(
                             selected = currentRoute == route,
                             onClick = {
@@ -198,8 +213,8 @@ private fun MessagesApp(
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(icon, contentDescription = label) },
-                            label = { Text(label) },
+                            icon = { Icon(icon, contentDescription = stringResource(labelRes)) },
+                            label = { Text(stringResource(labelRes)) },
                         )
                     }
                 }
@@ -208,7 +223,10 @@ private fun MessagesApp(
         floatingActionButton = {
             if (currentRoute == Routes.CONVERSATIONS) {
                 FloatingActionButton(onClick = { navController.navigate(Routes.compose()) }) {
-                    Icon(Icons.Filled.Edit, contentDescription = "New message")
+                    Icon(
+                        Icons.Filled.Edit,
+                        contentDescription = stringResource(R.string.action_new_message),
+                    )
                 }
             }
         },

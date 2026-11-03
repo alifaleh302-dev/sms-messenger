@@ -5,7 +5,6 @@
     <!-- Tabs -->
     <string name="tab_chats">Chats</string>
     <string name="tab_archived">Archived</string>
-    <string name="tab_blocked">Blocked</string>
     <string name="tab_templates">Templates</string>
     <string name="tab_scheduled">Scheduled</string>
     <string name="tab_settings">Settings</string>
@@ -23,14 +22,10 @@
     <string name="action_copy">Copy</string>
     <string name="action_call">Call</string>
     <string name="action_save">Save</string>
-    <string name="action_close">Close</string>
     <string name="action_retry">Retry</string>
-    <string name="action_forward">Forward</string>
-    <string name="action_add">Add</string>
     <string name="action_pin">Pin</string>
     <string name="action_unpin">Unpin</string>
     <string name="action_mark_read">Mark as read</string>
-    <string name="action_select_all">Select all</string>
 
     <!-- Empty states -->
     <string name="empty_conversations">No conversations yet</string>
@@ -49,14 +44,9 @@
     <string name="message_failed">Not sent. Tap to retry.</string>
     <string name="message_queued">Queued</string>
     <string name="unknown_contact">Unknown</string>
-    <string name="attachment_image">Photo</string>
-    <string name="attachment_video">Video</string>
-    <string name="attachment_audio">Audio</string>
-    <string name="attachment_vcard">Contact</string>
 
     <!-- Compose / new message -->
     <string name="new_message_title">New message</string>
-    <string name="recipient_hint">To</string>
     <string name="search_contacts_hint">Search name or number</string>
     <string name="invalid_recipient">Enter a valid phone number</string>
     <string name="add_contacts_permission">Allow contacts access to pick recipients by name</string>
@@ -65,7 +55,6 @@
     <string name="schedule_message">Schedule</string>
     <string name="schedule_title">Schedule message</string>
     <string name="scheduled_cancel">Cancel schedule</string>
-    <string name="scheduled_sent_ok">Message scheduled</string>
 
     <!-- Templates -->
     <string name="templates_title">Templates</string>
@@ -122,5 +111,40 @@
     <string name="error_no_telephony">This device cannot send SMS</string>
     <string name="error_sim_missing">No SIM card available</string>
     <string name="error_invalid_number">Invalid phone number</string>
-    <string name="error_attachment_too_large">Attachment is too large to send</string>
+
+    <!-- Additional UI labels -->
+    <string name="action_back">Back</string>
+    <string name="action_more">More options</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_open">Open</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_next">Next</string>
+    <string name="action_mute">Mute</string>
+    <string name="action_unmute">Unmute</string>
+    <string name="action_delete_conversation">Delete conversation</string>
+    <string name="action_manage_blocked">Manage blocked numbers</string>
+    <string name="action_search_all">Search all messages</string>
+    <string name="archived_count">Archived (%1$d)</string>
+    <string name="state_blocked">Blocked</string>
+    <string name="empty_templates_hint">Save frequently used replies and reuse them while composing.</string>
+    <string name="empty_scheduled_hint">Pick a date and time while composing to queue a message.</string>
+    <string name="search_min_chars">Type at least two characters</string>
+    <string name="scheduled_for">Scheduled for %1$s</string>
+    <string name="scheduled_sends_at">Sends %1$s</string>
+    <string name="blocked_hint">Messages from blocked numbers are discarded and never stored.</string>
+    <string name="blocked_number_hint">Phone number</string>
+    <string name="settings_blocked">Blocked numbers</string>
+    <string name="settings_history">History</string>
+    <string name="settings_history_summary">Import messages stored by the system before this app became default.</string>
+    <string name="settings_import">Import messages</string>
+    <string name="settings_sending">Sending</string>
+    <string name="settings_about_summary">A complete SMS client: conversations, delivery reports, scheduled messages, templates, blocking and search.</string>
+    <string name="settings_import_result">Imported %1$d messages</string>
+    <string name="settings_import_none">Nothing new to import</string>
+    <string name="error_add_recipient">Add at least one recipient</string>
+    <string name="error_message_empty">Message is empty</string>
+    <string name="error_unable_send">Unable to send message</string>
+    <string name="notification_channel_service">Background service</string>
+
+    <string name="notification_me">Me</string>
 </resources>

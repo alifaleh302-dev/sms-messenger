@@ -20,9 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sms.messages.R
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.viewmodel.ScheduledViewModel
 import com.sms.messages.ui.viewmodel.VmFactory
@@ -35,12 +37,12 @@ fun ScheduledScreen(
     val items by viewModel.items.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = "Scheduled messages")
+        TopBar(title = stringResource(R.string.tab_scheduled))
         if (items.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.Schedule,
-                title = "No scheduled messages",
-                hint = "Pick a date and time while composing to queue a message.",
+                title = stringResource(R.string.empty_scheduled),
+                hint = stringResource(R.string.empty_scheduled_hint),
             )
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
@@ -58,12 +60,12 @@ fun ScheduledScreen(
                                         style = MaterialTheme.typography.titleMedium,
                                     )
                                     Text(
-                                        text = "Sends ${TimeFormat.full(item.scheduledAt)}",
+                                        text = stringResource(R.string.scheduled_sends_at, TimeFormat.full(item.scheduledAt)),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
                                     )
                                 }
-                                TextButton(onClick = { viewModel.cancel(item) }) { Text("Cancel") }
+                                TextButton(onClick = { viewModel.cancel(item) }) { Text(stringResource(R.string.action_cancel)) }
                             }
                             Spacer(Modifier.height(6.dp))
                             Text(item.body, style = MaterialTheme.typography.bodyMedium)
@@ -88,7 +90,7 @@ fun PermissionScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Permissions required",
+            text = stringResource(R.string.permission_title),
             style = MaterialTheme.typography.titleLarge,
         )
         Spacer(Modifier.height(10.dp))
@@ -98,6 +100,6 @@ fun PermissionScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(20.dp))
-        TextButton(onClick = onRequest) { Text("Grant permissions") }
+        TextButton(onClick = onRequest) { Text(stringResource(R.string.permission_grant)) }
     }
 }

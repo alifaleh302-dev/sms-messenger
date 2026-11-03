@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,9 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sms.messages.R
 import com.sms.messages.data.MessageEntity
 import com.sms.messages.data.MessageStatus
 import com.sms.messages.data.MessageType
@@ -88,6 +90,14 @@ fun MessageBubble(
                         color = contentColor.copy(alpha = 0.7f),
                         fontSize = 10.sp,
                     )
+                    if (message.status == MessageStatus.PENDING) {
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(R.string.message_sending),
+                            color = contentColor.copy(alpha = 0.7f),
+                            fontSize = 10.sp,
+                        )
+                    }
                     if (outgoing) {
                         Spacer(Modifier.width(4.dp))
                         StatusIcon(message.status, contentColor, onRetry)
@@ -102,19 +112,19 @@ fun MessageBubble(
 private fun StatusIcon(status: MessageStatus, tint: Color, onRetry: () -> Unit) {
     when (status) {
         MessageStatus.PENDING -> Icon(
-            Icons.Filled.Schedule, contentDescription = null,
+            Icons.Filled.Schedule, contentDescription = stringResource(R.string.message_queued),
             tint = tint.copy(alpha = 0.7f), modifier = Modifier.size(12.dp)
         )
         MessageStatus.SENT -> Icon(
-            Icons.Filled.Done, contentDescription = null,
+            Icons.Filled.Done, contentDescription = stringResource(R.string.message_sent),
             tint = tint.copy(alpha = 0.8f), modifier = Modifier.size(14.dp)
         )
         MessageStatus.DELIVERED -> Icon(
-            Icons.Filled.DoneAll, contentDescription = null,
+            Icons.Filled.DoneAll, contentDescription = stringResource(R.string.message_delivered),
             tint = tint, modifier = Modifier.size(14.dp)
         )
         MessageStatus.FAILED -> Icon(
-            Icons.Filled.ErrorOutline, contentDescription = null,
+            Icons.Filled.ErrorOutline, contentDescription = stringResource(R.string.message_failed),
             tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp)
         )
         MessageStatus.NONE -> Unit

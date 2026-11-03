@@ -1,8 +1,10 @@
 package com.sms.messages.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sms.messages.R
 import com.sms.messages.SmsApp
 import com.sms.messages.data.AppSettings
 import com.sms.messages.data.MessageEntity
@@ -61,7 +63,7 @@ class ChatViewModel(
     ) { conversation, messages, draftText, isBlocked, appSettings ->
         val address = conversation?.address.orEmpty()
         val title = conversation?.displayName?.takeIf { it.isNotBlank() }
-            ?: PhoneNumbers.format(address).ifEmpty { address }
+            ?: PhoneNumbers.format(address).ifEmpty { app.getString(R.string.unknown_contact) }
         ChatUiState(
             conversationId = conversationId,
             address = address,
@@ -116,12 +118,14 @@ class ChatViewModel(
         draft.value = ""
         viewModelScope.launch {
             val settingsValue = settings.value
-            app.repository.sendMessage(
-                address = address,
-                body = body,
-                subscriptionId = settingsValue.defaultSubscriptionId,
-                deliveryReport = settingsValue.deliveryReports,
-            )
+            runCatching {
+                app.repository.sendMessage(
+                    address = address,
+                    body = body,
+                    subscriptionId = settingsValue.defaultSubscriptionId,
+                    deliveryReport = settingsValue.deliveryReports,
+                )
+            }.onFailure { Log.w("ChatViewModel", "Unable to send message", it) }
         }
     }
 

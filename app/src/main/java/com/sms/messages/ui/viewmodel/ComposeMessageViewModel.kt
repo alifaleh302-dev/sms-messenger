@@ -3,6 +3,7 @@ package com.sms.messages.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sms.messages.R
 import com.sms.messages.SmsApp
 import com.sms.messages.data.AppSettings
 import com.sms.messages.data.Contact
@@ -11,7 +12,6 @@ import com.sms.messages.util.PhoneNumbers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -105,6 +105,10 @@ class ComposeMessageViewModel(
     }
 
     fun addRecipient(number: String, name: String?) {
+        if (!PhoneNumbers.isValid(number)) {
+            error.value = app.getString(R.string.invalid_recipient)
+            return
+        }
         val normalized = PhoneNumbers.normalize(number).ifEmpty { number.trim() }
         if (normalized.isEmpty()) return
         if (recipients.value.any { it.number == normalized }) return
@@ -114,6 +118,7 @@ class ComposeMessageViewModel(
             isContact = name != null,
         )
         query.value = ""
+        error.value = null
     }
 
     fun removeRecipient(number: String) {
@@ -132,11 +137,11 @@ class ComposeMessageViewModel(
     fun send() {
         val text = body.value.trim()
         if (recipients.value.isEmpty()) {
-            error.value = "Add at least one recipient"
+            error.value = app.getString(R.string.error_add_recipient)
             return
         }
         if (text.isEmpty() && scheduledAt.value == null) {
-            error.value = "Message is empty"
+            error.value = app.getString(R.string.error_message_empty)
             return
         }
         val targets = recipients.value.map { it.number }
@@ -171,7 +176,7 @@ class ComposeMessageViewModel(
                 recipients.value = emptyList()
                 error.value = null
             } catch (t: Throwable) {
-                error.value = t.message ?: "Unable to send message"
+                error.value = t.message ?: app.getString(R.string.error_unable_send)
             } finally {
                 sending.value = false
             }

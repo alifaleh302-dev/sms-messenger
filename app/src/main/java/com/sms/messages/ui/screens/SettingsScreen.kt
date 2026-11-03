@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Card
@@ -27,10 +26,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sms.messages.BuildConfig
+import com.sms.messages.R
 import com.sms.messages.data.AppLanguage
 import com.sms.messages.data.ThemeMode
 import com.sms.messages.ui.viewmodel.SettingsViewModel
@@ -45,42 +47,44 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isDefault by viewModel.isDefaultSms.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { TopBar(title = "Settings") }
+        item { TopBar(title = stringResource(R.string.settings_title)) }
 
         item {
-            SettingsCard(title = "Default SMS app") {
+            SettingsCard(title = stringResource(R.string.settings_default_sms)) {
                 Text(
-                    text = if (isDefault) {
-                        "This app is the default SMS app"
-                    } else {
-                        "Required to send and receive messages with this app"
-                    },
+                    text = stringResource(
+                        if (isDefault) R.string.settings_is_default
+                        else R.string.settings_default_sms_summary
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (!isDefault) {
-                    TextButton(onClick = { DefaultSmsRole.request(viewModel.getApplication()) }) {
-                        Text("Set as default")
+                    TextButton(onClick = { DefaultSmsRole.request(context) }) {
+                        Text(stringResource(R.string.settings_set_default))
                     }
                 }
             }
         }
 
         item {
-            SettingsCard(title = "Appearance") {
+            SettingsCard(title = stringResource(R.string.settings_theme)) {
                 ThemeMode.entries.forEach { mode ->
                     ChoiceRow(
-                        label = when (mode) {
-                            ThemeMode.SYSTEM -> "System default"
-                            ThemeMode.LIGHT -> "Light"
-                            ThemeMode.DARK -> "Dark"
-                        },
+                        label = stringResource(
+                            when (mode) {
+                                ThemeMode.SYSTEM -> R.string.settings_theme_system
+                                ThemeMode.LIGHT -> R.string.settings_theme_light
+                                ThemeMode.DARK -> R.string.settings_theme_dark
+                            }
+                        ),
                         selected = settings.themeMode == mode,
                         onSelect = { viewModel.setTheme(mode) },
                     )
@@ -89,11 +93,11 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsCard(title = "Language") {
+            SettingsCard(title = stringResource(R.string.settings_language)) {
                 AppLanguage.entries.forEach { language ->
                     ChoiceRow(
                         label = when (language) {
-                            AppLanguage.SYSTEM -> "System default"
+                            AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                             AppLanguage.ENGLISH -> "English"
                             AppLanguage.ARABIC -> "العربية"
                         },
@@ -105,19 +109,24 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsCard(title = "Notifications") {
+            SettingsCard(title = stringResource(R.string.settings_notifications)) {
+                Text(
+                    text = stringResource(R.string.settings_notifications_summary),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 ToggleRow(
-                    label = "Show notifications",
+                    label = stringResource(R.string.settings_notifications),
                     checked = settings.notificationsEnabled,
                     onChange = viewModel::setNotifications,
                 )
                 ToggleRow(
-                    label = "Vibrate",
+                    label = stringResource(R.string.settings_vibrate),
                     checked = settings.vibrate,
                     onChange = viewModel::setVibrate,
                 )
                 ToggleRow(
-                    label = "Notification sound",
+                    label = stringResource(R.string.settings_sound),
                     checked = settings.soundEnabled,
                     onChange = viewModel::setSound,
                 )
@@ -125,14 +134,19 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsCard(title = "Sending") {
+            SettingsCard(title = stringResource(R.string.settings_sending)) {
+                Text(
+                    text = stringResource(R.string.settings_delivery_reports_summary),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 ToggleRow(
-                    label = "Request delivery reports",
+                    label = stringResource(R.string.settings_delivery_reports),
                     checked = settings.deliveryReports,
                     onChange = viewModel::setDeliveryReports,
                 )
                 ToggleRow(
-                    label = "Auto retry failed messages",
+                    label = stringResource(R.string.settings_auto_retry),
                     checked = settings.autoRetry,
                     onChange = viewModel::setAutoRetry,
                 )
@@ -144,33 +158,35 @@ fun SettingsScreen(
             LaunchedEffect(settings.signature) {
                 if (signature != settings.signature) signature = settings.signature
             }
-            SettingsCard(title = "Signature") {
+            SettingsCard(title = stringResource(R.string.settings_signature)) {
                 OutlinedTextField(
                     value = signature,
                     onValueChange = { signature = it },
-                    placeholder = { Text("Appended to every outgoing message") },
+                    placeholder = { Text(stringResource(R.string.settings_signature_hint)) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3,
                 )
-                TextButton(onClick = { viewModel.setSignature(signature) }) { Text("Save") }
+                TextButton(onClick = { viewModel.setSignature(signature) }) {
+                    Text(stringResource(R.string.action_save))
+                }
             }
         }
 
         item {
-            SettingsCard(title = "Blocked numbers") {
+            SettingsCard(title = stringResource(R.string.settings_blocked)) {
                 Text(
-                    text = "Messages from blocked numbers are discarded and never stored.",
+                    text = stringResource(R.string.blocked_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                TextButton(onClick = onOpenBlocked) { Text("Manage blocked numbers") }
+                TextButton(onClick = onOpenBlocked) { Text(stringResource(R.string.action_manage_blocked)) }
             }
         }
 
         item {
-            SettingsCard(title = "History") {
+            SettingsCard(title = stringResource(R.string.settings_history)) {
                 Text(
-                    text = "Import messages stored by the system before this app became default.",
+                    text = stringResource(R.string.settings_history_summary),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -180,17 +196,19 @@ fun SettingsScreen(
                         contentDescription = null,
                     )
                     Spacer(Modifier.width(6.dp))
-                    Text("Import messages")
+                    Text(stringResource(R.string.settings_import))
                 }
             }
         }
 
         item {
-            SettingsCard(title = "About") {
-                Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium)
+            SettingsCard(title = stringResource(R.string.settings_about)) {
                 Text(
-                    text = "A complete SMS client: conversations, delivery reports, " +
-                        "scheduled messages, templates, blocking and search.",
+                    text = stringResource(R.string.settings_version) + " " + BuildConfig.VERSION_NAME,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = stringResource(R.string.settings_about_summary),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -204,7 +222,7 @@ fun SettingsScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(it, modifier = Modifier.weight(1f))
-                TextButton(onClick = viewModel::clearMessage) { Text("OK") }
+                TextButton(onClick = viewModel::clearMessage) { Text(stringResource(android.R.string.ok)) }
             }
         }
     }

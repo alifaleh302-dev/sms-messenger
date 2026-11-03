@@ -3,9 +3,11 @@ package com.sms.messages.sms
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.util.Log
+import com.sms.messages.R
 import com.sms.messages.data.MessageEntity
 
 /**
@@ -16,11 +18,21 @@ class SmsSender(private val context: Context) {
 
     /** Splits the message and hands every part to the platform, reporting progress per part. */
     fun send(message: MessageEntity, subscriptionId: Int, requestDeliveryReport: Boolean): Result<Unit> {
+        if (!hasTelephony()) {
+            return Result.failure(
+                IllegalStateException(context.getString(R.string.error_no_telephony))
+            )
+        }
+
         val manager = resolveManager(subscriptionId)
-            ?: return Result.failure(IllegalStateException("No SMS capable subscription"))
+            ?: return Result.failure(
+                IllegalStateException(context.getString(R.string.error_sim_missing))
+            )
 
         val parts = runCatching { manager.divideMessage(message.body) }.getOrNull()
-            ?: return Result.failure(IllegalStateException("Unable to split message"))
+            ?: return Result.failure(
+                IllegalStateException(context.getString(R.string.error_generic))
+            )
 
         val sentIntents = ArrayList<PendingIntent>(parts.size)
         val deliveryIntents = ArrayList<PendingIntent>(parts.size)
@@ -78,10 +90,18 @@ class SmsSender(private val context: Context) {
     }.getOrDefault(false)
 
     private fun resolveManager(subscriptionId: Int): SmsManager? = runCatching {
-        if (subscriptionId >= 0 && subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-            SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+        val hasSubscription =
+            subscriptionId >= 0 && subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(SmsManager::class.java) ?: return@runCatching null
+            if (hasSubscription) manager.createForSubscriptionId(subscriptionId) else manager
         } else {
-            SmsManager.getDefault()
+            @Suppress("DEPRECATION")
+            if (hasSubscription) {
+                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+            } else {
+                SmsManager.getDefault()
+            }
         }
     }.onFailure { Log.w(TAG, "Failed to resolve SmsManager for sub $subscriptionId", it) }
         .getOrNull()

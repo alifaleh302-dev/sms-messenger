@@ -26,11 +26,11 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Unarchive
-import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -51,11 +51,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sms.messages.R
 import com.sms.messages.data.MessageEntity
 import com.sms.messages.data.MessageStatus
 import com.sms.messages.ui.components.InitialAvatar
@@ -93,7 +95,7 @@ fun ChatScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                 }
                 InitialAvatar(label = state.title, colorIndex = state.colorIndex, size = 36.dp)
                 Spacer(Modifier.width(10.dp))
@@ -106,7 +108,7 @@ fun ChatScreen(
                     )
                     if (state.blocked) {
                         Text(
-                            text = "Blocked",
+                            text = stringResource(R.string.state_blocked),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -116,15 +118,15 @@ fun ChatScreen(
                     val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${state.address}"))
                     runCatching { context.startActivity(intent) }
                 }) {
-                    Icon(Icons.Filled.Call, contentDescription = "Call")
+                    Icon(Icons.Filled.Call, contentDescription = stringResource(R.string.action_call))
                 }
                 Box {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "More")
+                        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.action_more))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
-                            text = { Text(if (state.archived) "Unarchive" else "Archive") },
+                            text = { Text(stringResource(if (state.archived) R.string.action_unarchive else R.string.action_archive)) },
                             leadingIcon = {
                                 Icon(
                                     if (state.archived) Icons.Filled.Unarchive else Icons.Filled.Archive,
@@ -134,17 +136,17 @@ fun ChatScreen(
                             onClick = { viewModel.toggleArchive(); menuOpen = false },
                         )
                         DropdownMenuItem(
-                            text = { Text(if (state.pinned) "Unpin" else "Pin") },
+                            text = { Text(stringResource(if (state.pinned) R.string.action_unpin else R.string.action_pin)) },
                             leadingIcon = { Icon(Icons.Filled.PushPin, contentDescription = null) },
                             onClick = { viewModel.togglePin(); menuOpen = false },
                         )
                         DropdownMenuItem(
-                            text = { Text(if (state.muted) "Unmute" else "Mute") },
+                            text = { Text(stringResource(if (state.muted) R.string.action_unmute else R.string.action_mute)) },
                             leadingIcon = { Icon(Icons.Filled.NotificationsOff, contentDescription = null) },
                             onClick = { viewModel.toggleMute(); menuOpen = false },
                         )
                         DropdownMenuItem(
-                            text = { Text(if (state.blocked) "Unblock" else "Block") },
+                            text = { Text(stringResource(if (state.blocked) R.string.action_unblock else R.string.action_block)) },
                             leadingIcon = {
                                 Icon(
                                     if (state.blocked) Icons.Filled.LockOpen else Icons.Filled.Block,
@@ -157,7 +159,7 @@ fun ChatScreen(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete conversation") },
+                            text = { Text(stringResource(R.string.action_delete_conversation)) },
                             leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
                             onClick = {
                                 viewModel.deleteConversation()
@@ -224,7 +226,7 @@ fun ChatScreen(
                 OutlinedTextField(
                     value = state.draft,
                     onValueChange = viewModel::onDraftChange,
-                    placeholder = { Text("Text message") },
+                    placeholder = { Text(stringResource(R.string.message_hint)) },
                     modifier = Modifier.weight(1f),
                     maxLines = 5,
                 )
@@ -233,7 +235,7 @@ fun ChatScreen(
                     onClick = { viewModel.send() },
                     enabled = state.draft.isNotBlank() && !state.blocked,
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.action_send))
                 }
             }
         }
@@ -249,7 +251,7 @@ fun ChatScreen(
                     if (message.status == MessageStatus.FAILED) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "Not sent",
+                            text = stringResource(R.string.message_failed),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.labelMedium,
                         )
@@ -263,18 +265,18 @@ fun ChatScreen(
                 }) {
                     Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Copy")
+                    Text(stringResource(R.string.action_copy))
                 }
             },
             dismissButton = {
                 Row {
                     if (message.status == MessageStatus.FAILED) {
                         TextButton(onClick = { viewModel.retry(message.id); selected = null }) {
-                            Text("Retry")
+                            Text(stringResource(R.string.action_retry))
                         }
                     }
                     TextButton(onClick = { viewModel.deleteMessage(message.id); selected = null }) {
-                        Text("Delete")
+                        Text(stringResource(R.string.action_delete))
                     }
                 }
             },

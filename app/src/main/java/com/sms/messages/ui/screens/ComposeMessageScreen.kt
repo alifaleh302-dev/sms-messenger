@@ -1,6 +1,5 @@
 package com.sms.messages.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,9 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.TextSnippet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DatePicker
@@ -49,11 +48,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sms.messages.R
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.components.InitialAvatar
 import com.sms.messages.ui.viewmodel.ComposeMessageViewModel
@@ -85,18 +85,18 @@ fun ComposeMessageScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
             Text(
-                text = "New message",
+                text = stringResource(R.string.new_message_title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { templatesOpen = true }) {
-                Icon(Icons.Filled.TextSnippet, contentDescription = "Templates")
+                Icon(Icons.AutoMirrored.Filled.TextSnippet, contentDescription = stringResource(R.string.templates_title))
             }
             IconButton(onClick = { showDatePicker = true }) {
-                Icon(Icons.Filled.Schedule, contentDescription = "Schedule")
+                Icon(Icons.Filled.Schedule, contentDescription = stringResource(R.string.schedule_message))
             }
         }
 
@@ -122,12 +122,21 @@ fun ComposeMessageScreen(
         OutlinedTextField(
             value = state.query,
             onValueChange = viewModel::onQueryChange,
-            placeholder = { Text("To") },
+            placeholder = { Text(stringResource(R.string.search_contacts_hint)) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 4.dp),
         )
+
+        if (state.suggestions.isEmpty() && state.query.isBlank()) {
+            Text(
+                text = stringResource(R.string.add_contacts_permission),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
 
         if (state.suggestions.isNotEmpty()) {
             LazyColumn(
@@ -169,7 +178,7 @@ fun ComposeMessageScreen(
         OutlinedTextField(
             value = state.body,
             onValueChange = viewModel::onBodyChange,
-            placeholder = { Text("Text message") },
+            placeholder = { Text(stringResource(R.string.message_hint)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -190,11 +199,11 @@ fun ComposeMessageScreen(
                     Icon(Icons.Filled.Schedule, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "Scheduled for ${TimeFormat.full(scheduledAt)}",
+                        text = stringResource(R.string.scheduled_for, TimeFormat.full(scheduledAt)),
                         style = MaterialTheme.typography.labelMedium,
                     )
                     Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = { viewModel.schedule(null) }) { Text("Cancel") }
+                    TextButton(onClick = { viewModel.schedule(null) }) { Text(stringResource(R.string.scheduled_cancel)) }
                 }
             }
         }
@@ -221,7 +230,7 @@ fun ComposeMessageScreen(
             ) {
                 Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
                 Spacer(Modifier.width(6.dp))
-                Text(if (state.scheduledAt != null) "Schedule" else "Send")
+                Text(stringResource(if (state.scheduledAt != null) R.string.schedule_message else R.string.action_send))
             }
         }
     }
@@ -230,7 +239,7 @@ fun ComposeMessageScreen(
         DropdownMenu(expanded = templatesOpen, onDismissRequest = { templatesOpen = false }) {
             if (state.templates.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text("No templates") },
+                    text = { Text(stringResource(R.string.empty_templates)) },
                     onClick = { templatesOpen = false },
                     enabled = false,
                 )
@@ -238,6 +247,12 @@ fun ComposeMessageScreen(
                 state.templates.forEach { template ->
                     DropdownMenuItem(
                         text = { Text(template.title) },
+                        trailingIcon = {
+                            Text(
+                                text = stringResource(R.string.template_insert),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        },
                         onClick = {
                             viewModel.applyTemplate(template)
                             templatesOpen = false
@@ -257,10 +272,10 @@ fun ComposeMessageScreen(
                     pendingDate = dateState.selectedDateMillis
                     showDatePicker = false
                     showTimePicker = true
-                }) { Text("Next") }
+                }) { Text(stringResource(R.string.action_next)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         ) {
             DatePicker(state = dateState)
@@ -271,7 +286,7 @@ fun ComposeMessageScreen(
         val timeState = rememberTimePickerState()
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            title = { Text("Pick a time") },
+            title = { Text(stringResource(R.string.schedule_title)) },
             text = { TimePicker(state = timeState) },
             confirmButton = {
                 TextButton(onClick = {
@@ -283,10 +298,10 @@ fun ComposeMessageScreen(
                     }
                     viewModel.schedule(calendar.timeInMillis)
                     showTimePicker = false
-                }) { Text("Schedule") }
+                }) { Text(stringResource(R.string.schedule_message)) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -302,11 +317,11 @@ fun SearchScreen(
     val query by viewModel.currentQuery.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = "Search", onBack = onBack)
+        TopBar(title = stringResource(R.string.action_search), onBack = onBack)
         OutlinedTextField(
             value = query,
             onValueChange = viewModel::onQueryChange,
-            placeholder = { Text("Search messages") },
+            placeholder = { Text(stringResource(R.string.search_title)) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -316,7 +331,11 @@ fun SearchScreen(
         if (results.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.Search,
-                title = if (query.length < 2) "Type at least two characters" else "No results found",
+                title = if (query.length < 2) {
+                    stringResource(R.string.search_min_chars)
+                } else {
+                    stringResource(R.string.empty_search)
+                },
             )
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
