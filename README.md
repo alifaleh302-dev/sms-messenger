@@ -108,9 +108,20 @@ bash tools/gbuild.sh :app:testDebugUnitTest
 
 ## الأذونات / Permissions
 
-`SEND_SMS`, `RECEIVE_SMS`, `READ_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH`,
-`READ_PHONE_STATE`, `READ_CONTACTS`, `CALL_PHONE`, `POST_NOTIFICATIONS`,
-`VIBRATE`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `INTERNET`
+يطلب التطبيق أقل عدد ممكن من الأذونات:
+
+| الإذن | السبب |
+|---|---|
+| `SEND_SMS`, `RECEIVE_SMS`, `READ_SMS` | إرسال الرسائل واستقبالها وعرض سجلها |
+| `RECEIVE_MMS`, `RECEIVE_WAP_PUSH` | استقبال رسائل الوسائط |
+| `READ_CONTACTS` | عرض أسماء جهات الاتصال بدل الأرقام |
+| `POST_NOTIFICATIONS` | تنبيهك بالرسائل الجديدة |
+| `VIBRATE` | الاهتزاز عند وصول رسالة |
+| `INTERNET` | تنزيل محتوى رسائل الوسائط من الشبكة |
+
+لا يطلب التطبيق أذونات المكالمات أو الصور أو الموقع أو الملفات. زر الاتصال يفتح
+تطبيق الهاتف عبر `ACTION_DIAL` الذي لا يحتاج أي إذن. الرسائل لا تُرفع إلى أي خادم،
+والنسخ الاحتياطي السحابي مقصور على إعدادات التطبيق ولا يشمل نص أي رسالة.
 
 ## الترخيص / License
 
