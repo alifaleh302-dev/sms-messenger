@@ -7,14 +7,14 @@ Arabic and English interfaces.
 
 ## التحميل / Download
 
-**أحدث نسخة (1.3.0):**
+**أحدث نسخة (1.4.0):**
 
 | | |
 |---|---|
-| رابط مباشر | [`app-release.apk`](https://github.com/alifaleh302-dev/sms-messenger/releases/download/v1.3.0/app-release.apk) |
-| صفحة الإصدار | [Releases v1.3.0](../../releases/tag/v1.3.0) |
+| رابط مباشر | [`app-release.apk`](https://github.com/alifaleh302-dev/sms-messenger/releases/download/v1.4.0/app-release.apk) |
+| صفحة الإصدار | [Releases v1.4.0](../../releases/tag/v1.4.0) |
 | الحجم | 2.5 ميجابايت |
-| بصمة SHA-256 | `874a7f46ed1336628c4c1da7aa01061fc2f5c7e79576764afd7a47f923f9884b` |
+| بصمة SHA-256 | `b3fda3cdfdce577a2c0c570410b882ea0ea4c7f84ccd31fea147abf88fc0421c` |
 
 للتحقق من سلامة الملف بعد التحميل:
 
@@ -155,6 +155,7 @@ app/src/main/java/com/sms/messages/
 
 | الإصدار | أبرز التغييرات |
 |---------|----------------|
+| 1.4.0   | إصلاح لوحة الألوان الناقصة، خلفية موحّدة لكل الشاشات، فقاعات بحجم النص، حدود واضحة للتبويبات والفقاعات، لقطات شاشة آلية |
 | 1.3.0   | تبويبات ذكية ومخصصة، التراجع عن الإرسال، قفل التطبيق، حذف رموز التحقق تلقائياً |
 | 1.2.0   | إجراءات الرسالة، التفاعلات، الردود المقتبسة، النجمة، المهملات، تحديد متعدد، تصفية البحث |
 | 1.1.0   | بنية Hilt، تصميم Google Messages، إصلاحات من اختبارات Robolectric |
@@ -167,7 +168,7 @@ app/src/main/java/com/sms/messages/
 bash tools/gbuild.sh :app:testDebugUnitTest
 ```
 
-١٢٠ اختبارًا تعمل على JVM. اختبارات Robolectric تشغّل نظام أندرويد الحقيقي (Room +
+١٣٨ اختبارًا تعمل على JVM. اختبارات Robolectric تشغّل نظام أندرويد الحقيقي (Room +
 SQLite + جداول الموارد) بدل محاكاته:
 
 | الملف | ما يغطيه |
@@ -185,6 +186,8 @@ SQLite + جداول الموارد) بدل محاكاته:
 | `CategoriesAndUndoTest` | إنشاء التبويبات وإدارتها، حذف رموز التحقق، التراجع عن الإرسال |
 | `PinHasherTest` | تجزئة الرمز السري وعدم تخزينه كنص صريح |
 | `PhoneNumbersTest`, `TimeFormatTest`, `SearchQueryTest`, `LocalizationTest` | التطبيع والتنسيق والبحث |
+| `ThemePaletteTest` | لوحة الألوان كاملة ولا تسقط إلى ألوان Material الافتراضية |
+| `ScreenShotsTest` | يرسم كل شاشة إلى صورة PNG بلغتين وسمتين (٢٢ لقطة) |
 
 ## الأذونات / Permissions
 
