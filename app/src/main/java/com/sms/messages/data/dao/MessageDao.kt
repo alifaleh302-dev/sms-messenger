@@ -9,6 +9,12 @@ import com.sms.messages.data.MessageStatus
 import com.sms.messages.data.MessageType
 import kotlinx.coroutines.flow.Flow
 
+/** One message body with its thread, used to classify a whole list in one query. */
+data class ConversationBody(
+    val conversationId: Long,
+    val body: String,
+)
+
 data class SearchHit(
     val id: Long,
     val conversationId: Long,
@@ -164,4 +170,11 @@ interface MessageDao {
     /** The bodies of every message in a conversation, oldest first, for tab classification. */
     @Query("SELECT body FROM messages WHERE conversationId = :conversationId ORDER BY timestamp ASC")
     suspend fun bodiesForConversation(conversationId: Long): List<String>
+
+    /**
+     * Every body in the database, grouped by thread in the caller. Classifying the whole
+     * conversation list needs the text of all of them, and one query beats one per thread.
+     */
+    @Query("SELECT conversationId, body FROM messages ORDER BY conversationId ASC, timestamp ASC")
+    suspend fun allBodies(): List<ConversationBody>
 }

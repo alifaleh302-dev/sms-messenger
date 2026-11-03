@@ -241,7 +241,7 @@ fun ConversationsScreen(
         val editing = tabEditor
         TabEditorDialog(
             existing = editing,
-            conversations = state.items,
+            conversations = state.allItems,
             onDismiss = { creatingTab = false; tabEditor = null },
             onSave = { name, iconIndex, colorIndex ->
                 val id = editing?.categoryId

@@ -14,7 +14,7 @@ Arabic and English interfaces.
 | رابط مباشر | [`app-release.apk`](https://github.com/alifaleh302-dev/sms-messenger/releases/download/v1.3.0/app-release.apk) |
 | صفحة الإصدار | [Releases v1.3.0](../../releases/tag/v1.3.0) |
 | الحجم | 2.5 ميجابايت |
-| بصمة SHA-256 | `e408362c480d60a1026e5f0da14d6e593eeda9b7b082e55c49bf7b50ad939a5f` |
+| بصمة SHA-256 | `874a7f46ed1336628c4c1da7aa01061fc2f5c7e79576764afd7a47f923f9884b` |
 
 للتحقق من سلامة الملف بعد التحميل:
 
@@ -167,7 +167,7 @@ app/src/main/java/com/sms/messages/
 bash tools/gbuild.sh :app:testDebugUnitTest
 ```
 
-١١٨ اختبارًا تعمل على JVM. اختبارات Robolectric تشغّل نظام أندرويد الحقيقي (Room +
+١٢٠ اختبارًا تعمل على JVM. اختبارات Robolectric تشغّل نظام أندرويد الحقيقي (Room +
 SQLite + جداول الموارد) بدل محاكاته:
 
 | الملف | ما يغطيه |

@@ -137,6 +137,25 @@ class CategoriesAndUndoTest {
         assertEquals(com.sms.messages.util.SmartTab.TRANSACTIONS, repository.smartTabFor(conversation))
     }
 
+    @Test
+    fun `classifying the whole list matches classifying one thread at a time`() = runTest {
+        repository.persistIncoming("8888", "Your verification code is 445566", 1_000L, -1)
+        repository.persistIncoming("+966500000001", "see you at 5", 2_000L, -1)
+        repository.persistIncoming("AlRajhiBank", "Your statement is ready", 3_000L, -1)
+
+        val conversations = database.conversations().getAll()
+        val batched = repository.smartTabsFor(conversations)
+        val oneByOne = conversations.associate { it.id to repository.smartTabFor(it) }
+
+        assertEquals("the batch must agree with the single-thread path", oneByOne, batched)
+        assertEquals(3, batched.size)
+    }
+
+    @Test
+    fun `classifying an empty list needs no query`() = runTest {
+        assertTrue(repository.smartTabsFor(emptyList()).isEmpty())
+    }
+
     // ------------------------------------------------------------ one-time codes
 
     @Test

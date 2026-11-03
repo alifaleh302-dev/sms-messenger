@@ -600,6 +600,24 @@ class SmsRepository(
             bodies = messages.bodiesForConversation(conversation.id),
         )
 
+    /**
+     * Classifies every conversation at once. The bodies are read in a single query and then
+     * grouped, so a long conversation list does not turn into one query per thread.
+     */
+    suspend fun smartTabsFor(conversations: List<ConversationEntity>): Map<Long, SmartTab> {
+        if (conversations.isEmpty()) return emptyMap()
+        val bodiesByThread = messages.allBodies().groupBy(
+            keySelector = { it.conversationId },
+            valueTransform = { it.body },
+        )
+        return conversations.associate { conversation ->
+            conversation.id to SmartCategories.classify(
+                address = conversation.address,
+                bodies = bodiesByThread[conversation.id].orEmpty(),
+            )
+        }
+    }
+
     // ---------------------------------------------------------------- one-time codes
 
     /** Marks a message as carrying a code, used when a code is found after the fact. */

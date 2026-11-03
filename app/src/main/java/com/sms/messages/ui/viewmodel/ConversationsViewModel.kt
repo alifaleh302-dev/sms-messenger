@@ -51,7 +51,13 @@ data class TabItem(
 }
 
 data class ConversationsUiState(
+    /** The rows to show, already narrowed to the selected tab and the search text. */
     val items: List<ConversationListItem> = emptyList(),
+    /**
+     * Every conversation, whatever the selected tab. The tab editor lists these, so a
+     * conversation can be filed into a tab while a different tab is on screen.
+     */
+    val allItems: List<ConversationListItem> = emptyList(),
     val tabs: List<TabItem> = emptyList(),
     val selectedTabKey: String = TAB_ALL,
     val query: String = "",
@@ -117,6 +123,7 @@ class ConversationsViewModel @Inject constructor(
 
         ConversationsUiState(
             items = items.filter { inTab(it, activeKey) }.filter { matches(it, text) },
+            allItems = items,
             tabs = tabs,
             selectedTabKey = activeKey,
             query = text,
@@ -128,7 +135,7 @@ class ConversationsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             repository.observeConversations().collect { conversations ->
-                smartTabs.value = conversations.associate { it.id to repository.smartTabFor(it) }
+                smartTabs.value = repository.smartTabsFor(conversations)
             }
         }
     }
