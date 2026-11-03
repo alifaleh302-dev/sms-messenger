@@ -75,6 +75,18 @@ android {
         // Robolectric runs the real Android framework and needs the merged resources.
         unitTests.isIncludeAndroidResources = true
     }
+
+    lint {
+        // Never let a lint error ride along in a release: abortOnError is the default, but
+        // lintVitalRelease alone does not cover resource and manifest issues, so run the
+        // full check as part of assembleRelease and fail the build on anything it finds.
+        checkReleaseBuilds = true
+        abortOnError = true
+        warningsAsErrors = false
+        // The report is the only place UnusedResources and friends show up, so always write it.
+        xmlReport = true
+        htmlReport = true
+    }
 }
 
 ksp {
