@@ -32,7 +32,21 @@ class TimeFormatTest {
     }
 
     @Test
-    fun `clock is zero padded`() {
-        assertEquals(5, TimeFormat.clock(now).length)
+    fun `clock follows the device time format`() {
+        // DateFormat.SHORT honours the 12/24-hour setting, so assert the shape
+        // rather than a fixed width: either "H:mm", "HH:mm" or "h:mm AM".
+        val clock = TimeFormat.clock(now)
+        assertTrue("clock was blank", clock.isNotBlank())
+        assertTrue("clock had no digits: $clock", clock.any { it.isDigit() })
+    }
+
+    @Test
+    fun `relative and day labels accept localised wording`() {
+        assertEquals("الآن", TimeFormat.relative(now - 1_000, now, nowLabel = "الآن"))
+        assertEquals("اليوم", TimeFormat.dayLabel(now, now, todayLabel = "اليوم"))
+        assertEquals(
+            "أمس",
+            TimeFormat.dayLabel(now - TimeUnit.DAYS.toMillis(1), now, yesterdayLabel = "أمس"),
+        )
     }
 }

@@ -131,7 +131,13 @@
     <string name="error_add_recipient">أضف مستلماً واحداً على الأقل</string>
     <string name="error_message_empty">الرسالة فارغة</string>
     <string name="error_unable_send">تعذر إرسال الرسالة</string>
-    <string name="notification_channel_service">خدمة الخلفية</string>
 
     <string name="notification_me">أنا</string>
+
+    <string name="time_now">الآن</string>
+    <string name="time_today">اليوم</string>
+    <string name="time_yesterday">أمس</string>
+    <string name="error_send_failed">تعذر إرسال الرسالة</string>
+    <string name="recipients_more">‏+%1$d</string>
+    <string name="mms_placeholder">رسالة وسائط</string>
 </resources>

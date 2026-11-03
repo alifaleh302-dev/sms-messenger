@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.sms.messages.SmsApp
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** Re-arms scheduled messages after a reboot or an app update. */
@@ -18,7 +19,8 @@ class BootReceiver : BroadcastReceiver() {
                 app.applicationScope.launch {
                     try {
                         ScheduledMessageScheduler.rescheduleAll(app)
-                        app.repository.retryUnfinishedMessages()
+                        val settings = app.settings.settings.first()
+                        app.repository.retryUnfinishedMessages(autoRetry = settings.autoRetry)
                     } catch (t: Throwable) {
                         Log.e(TAG, "Boot reschedule failed", t)
                     } finally {

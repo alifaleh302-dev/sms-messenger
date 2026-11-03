@@ -14,6 +14,7 @@ import com.sms.messages.notifications.MessageNotifier
 import com.sms.messages.util.PhoneNumbers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -52,6 +53,7 @@ class ChatViewModel(
 
     private val draft = MutableStateFlow("")
     private val blocked = MutableStateFlow(false)
+    private val sendFailure = MutableStateFlow(false)
     private val settings = MutableStateFlow(AppSettings())
 
     val uiState: StateFlow<ChatUiState> = combine(
@@ -125,8 +127,16 @@ class ChatViewModel(
                     subscriptionId = settingsValue.defaultSubscriptionId,
                     deliveryReport = settingsValue.deliveryReports,
                 )
-            }.onFailure { Log.w("ChatViewModel", "Unable to send message", it) }
+            }.onFailure {
+                Log.w("ChatViewModel", "Unable to send message", it)
+                sendFailure.value = true
+            }
         }
+    }
+
+    /** Clears the "could not send" prompt after the screen has shown it. */
+    fun clearSendFailure() {
+        sendFailure.value = false
     }
 
     fun retry(messageId: Long) = viewModelScope.launch {
@@ -136,6 +146,8 @@ class ChatViewModel(
     fun deleteMessage(messageId: Long) = viewModelScope.launch {
         app.repository.deleteMessage(messageId)
     }
+
+    val sendFailed: StateFlow<Boolean> = sendFailure.asStateFlow()
 
     fun markRead() = viewModelScope.launch {
         app.repository.markConversationRead(conversationId)

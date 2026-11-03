@@ -29,8 +29,18 @@ class MessageNotifier(private val context: Context) {
         scope.launch {
             val settings = app.settings.settings.first()
             if (!settings.notificationsEnabled) return@launch
+            // A muted conversation still records the message, it just must not alert.
+            val muted = app.repository.isConversationMuted(conversationId)
             val name = app.repository.contactName(address)
-            post(conversationId, address, name, body, settings.vibrate, settings.soundEnabled)
+            post(
+                conversationId = conversationId,
+                address = address,
+                name = name,
+                body = body,
+                vibrate = settings.vibrate && !muted,
+                sound = settings.soundEnabled && !muted,
+                silent = muted,
+            )
         }
     }
 
@@ -41,6 +51,7 @@ class MessageNotifier(private val context: Context) {
         body: String,
         vibrate: Boolean,
         sound: Boolean,
+        silent: Boolean = false,
     ) {
         val title = name ?: PhoneNumbers.format(address).ifEmpty { address }
         val content = buildContentIntent(conversationId)
@@ -95,7 +106,7 @@ class MessageNotifier(private val context: Context) {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 
         if (vibrate) builder.setVibrate(longArrayOf(0, 250, 150, 250))
-        if (!sound) builder.setSilent(true)
+        if (!sound || silent) builder.setSilent(true)
 
         runCatching {
             manager.notify(Notifications.idForConversation(conversationId), builder.build())

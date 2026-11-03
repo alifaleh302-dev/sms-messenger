@@ -31,7 +31,8 @@ class SmsStatusReceiver : BroadcastReceiver() {
         app.applicationScope.launch {
             try {
                 if (delivered) {
-                    val results = deliveredPartResults.getOrPut(messageId) { mutableMapOf() }
+                    val results = deliveredPartResults
+                        .getOrPut(messageId) { java.util.concurrent.ConcurrentHashMap() }
                     results[partIndex] = result
                     if (results.size >= partCount) {
                         if (results.values.all { it == Activity.RESULT_OK }) {
@@ -40,7 +41,8 @@ class SmsStatusReceiver : BroadcastReceiver() {
                         deliveredPartResults.remove(messageId)
                     }
                 } else {
-                    val results = sentPartResults.getOrPut(messageId) { mutableMapOf() }
+                    val results = sentPartResults
+                        .getOrPut(messageId) { java.util.concurrent.ConcurrentHashMap() }
                     results[partIndex] = result
                     if (results.size >= partCount) {
                         val success = results.values.all { it == Activity.RESULT_OK }
@@ -76,7 +78,7 @@ class SmsStatusReceiver : BroadcastReceiver() {
         const val EXTRA_PART_ID = "part_id"
         const val EXTRA_DELIVERY = "delivery"
 
-        private val sentPartResults = mutableMapOf<Long, MutableMap<Int, Int>>()
-        private val deliveredPartResults = mutableMapOf<Long, MutableMap<Int, Int>>()
+        private val sentPartResults = java.util.concurrent.ConcurrentHashMap<Long, MutableMap<Int, Int>>()
+        private val deliveredPartResults = java.util.concurrent.ConcurrentHashMap<Long, MutableMap<Int, Int>>()
     }
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Only the settings DataStore is backed up. Message bodies are sensitive and
+     must never leave the device, so the database domain is not included. -->
 <full-backup-content>
-    <include domain="database" path="sms_messenger.db" />
-    <include domain="sharedpref" path="." />
+    <include domain="file" path="datastore/" />
 </full-backup-content>

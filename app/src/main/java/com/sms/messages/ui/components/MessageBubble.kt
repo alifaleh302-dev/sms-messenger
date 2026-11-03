@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sms.messages.R
@@ -65,7 +64,8 @@ fun MessageBubble(
     ) {
         Box(
             modifier = Modifier
-                .widthIn(max = 300.dp)
+                .widthIn(max = 320.dp)
+                .fillMaxWidth(0.86f)
                 .clip(shape)
                 .background(container)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -128,32 +128,5 @@ private fun StatusIcon(status: MessageStatus, tint: Color, onRetry: () -> Unit) 
             tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp)
         )
         MessageStatus.NONE -> Unit
-    }
-}
-
-@Composable
-fun ConversationRowContent(
-    snippet: String,
-    timestamp: Long,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = snippet,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = TimeFormat.relative(timestamp),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

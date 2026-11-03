@@ -112,8 +112,18 @@ fun ComposeMessageScreen(
                         onClick = { viewModel.removeRecipient(recipient.number) },
                         label = { Text(recipient.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         trailingIcon = {
-                            Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.action_delete),
+                                modifier = Modifier.size(14.dp),
+                            )
                         },
+                    )
+                }
+                if (state.recipients.size > 4) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(stringResource(R.string.recipients_more, state.recipients.size - 4)) },
                     )
                 }
             }

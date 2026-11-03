@@ -5,6 +5,7 @@ import android.util.Log
 import com.sms.messages.R
 import com.sms.messages.sms.SmsSender
 import com.sms.messages.util.PhoneNumbers
+import com.sms.messages.util.SearchQuery
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -40,8 +41,6 @@ class SmsRepository(
     fun observeMessages(conversationId: Long): Flow<List<MessageEntity>> =
         messages.observeForConversation(conversationId)
 
-    fun observeMessage(id: Long): Flow<MessageEntity?> = messages.observeById(id)
-
     fun observeTemplates(): Flow<List<TemplateEntity>> = templates.observeAll()
 
     fun observeScheduled(): Flow<List<ScheduledMessageEntity>> = scheduled.observePending()
@@ -49,7 +48,7 @@ class SmsRepository(
     fun observeBlocked(): Flow<List<BlockedNumberEntity>> = blocked.observeAll()
 
     fun search(query: String): Flow<List<SearchResult>> =
-        messages.search(query).map { hits ->
+        messages.search(SearchQuery.escapeLike(query)).map { hits ->
             hits.map { hit ->
                 SearchResult(
                     messageId = hit.id,
@@ -83,13 +82,6 @@ class SmsRepository(
         return conversations.getById(id)
             ?: conversations.getByAddress(normalized)
             ?: error("Conversation insert failed for $normalized")
-    }
-
-    suspend fun renameConversation(id: Long, name: String?) {
-        val conversation = conversations.getById(id) ?: return
-        conversations.setDisplayName(id, name)
-        contacts.invalidate()
-        Log.d(TAG, "Renamed conversation ${conversation.address} to $name")
     }
 
     suspend fun setArchived(id: Long, archived: Boolean) = conversations.setArchived(id, archived)
@@ -245,11 +237,16 @@ class SmsRepository(
 
     suspend fun conversationAddress(id: Long): String? = conversations.getById(id)?.address
 
-    /** Re-queues messages that were left pending, e.g. when the process was killed. */
-    suspend fun retryUnfinishedMessages(): Int {
-        val unfinished = messages.getUnfinished()
+    /**
+     * Re-queues messages that never left the device, e.g. when the process was killed
+     * mid-send. When [autoRetry] is on, recently failed outgoing messages are retried too,
+     * bounded by [RETRY_WINDOW_MILLIS] and [MAX_AUTO_RETRIES] so a permanently failing
+     * number cannot loop forever.
+     */
+    suspend fun retryUnfinishedMessages(autoRetry: Boolean = true): Int {
         var retried = 0
-        for (message in unfinished) {
+
+        for (message in messages.getUnfinished()) {
             if (message.type == MessageType.INBOX) continue
             val result = sender.send(message, message.subscriptionId, requestDeliveryReport = false)
             if (result.isFailure) {
@@ -258,11 +255,27 @@ class SmsRepository(
                 retried++
             }
         }
+
+        if (autoRetry) {
+            val since = System.currentTimeMillis() - RETRY_WINDOW_MILLIS
+            val failed = messages.getRecentlyFailed(
+                failed = MessageStatus.FAILED,
+                inbox = MessageType.INBOX,
+                since = since,
+                limit = MAX_AUTO_RETRIES,
+            )
+            for (message in failed) {
+                messages.updateStatus(message.id, MessageStatus.PENDING, null)
+                if (dispatch(message.id, deliveryReport = false)) retried++
+            }
+        }
+
         Log.d(TAG, "Re-queued $retried unfinished messages")
         return retried
     }
 
-    suspend fun dueScheduled(now: Long): List<ScheduledMessageEntity> = scheduled.getDue(now)
+    suspend fun isConversationMuted(id: Long): Boolean =
+        conversations.getById(id)?.muted ?: false
 
     suspend fun completeScheduled(id: Long) = scheduled.markCompleted(id)
 
@@ -314,6 +327,8 @@ class SmsRepository(
             conversations.deleteById(conversationId)
         } else {
             conversations.touch(conversationId, latest.body, latest.timestamp)
+            // Deleting an unread message must also drop the unread badge.
+            conversations.setUnreadCount(conversationId, messages.countUnread(conversationId))
         }
     }
 
@@ -330,6 +345,10 @@ class SmsRepository(
 
     private companion object {
         const val TAG = "SmsRepository"
+
+        /** Only failures from the last hour are retried automatically. */
+        const val RETRY_WINDOW_MILLIS = 60L * 60L * 1000L
+        const val MAX_AUTO_RETRIES = 5
     }
 }
 

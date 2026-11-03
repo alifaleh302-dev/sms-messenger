@@ -38,6 +38,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,11 +79,24 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     var menuOpen by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<MessageEntity?>(null) }
+    val sendFailed by viewModel.sendFailed.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val sendFailedText = stringResource(R.string.error_send_failed)
+    val todayLabel = stringResource(R.string.time_today)
+    val yesterdayLabel = stringResource(R.string.time_yesterday)
+
+    LaunchedEffect(sendFailed) {
+        if (sendFailed) {
+            snackbarHostState.showSnackbar(sendFailedText)
+            viewModel.clearSendFailure()
+        }
+    }
 
     LaunchedEffect(state.messages.size) {
         if (state.messages.isNotEmpty()) listState.animateScrollToItem(state.messages.lastIndex)
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -186,7 +201,11 @@ fun ChatScreen(
         ) {
             var lastDay = ""
             state.messages.forEach { message ->
-                val day = TimeFormat.dayLabel(message.timestamp)
+                val day = TimeFormat.dayLabel(
+                    timestamp = message.timestamp,
+                    todayLabel = todayLabel,
+                    yesterdayLabel = yesterdayLabel,
+                )
                 if (day != lastDay) {
                     lastDay = day
                     item(key = "day-$day") {
@@ -239,6 +258,14 @@ fun ChatScreen(
                 }
             }
         }
+    }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding(),
+        )
     }
 
     selected?.let { message ->

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
+import com.sms.messages.R
 import com.sms.messages.SmsApp
 import com.sms.messages.notifications.MessageNotifier
 import kotlinx.coroutines.launch
@@ -33,9 +34,9 @@ class MmsReceiver : BroadcastReceiver() {
         app.applicationScope.launch {
             try {
                 for (message in push) {
-                    val body = message.displayMessageBody ?: message.messageBody ?: continue
-                    // The payload is a binary MMS notification; surface a placeholder entry
-                    // until the download service resolves the real content.
+                    // The WAP push body is a binary MMS notification, not text, so it must
+                    // never be stored verbatim: that renders as garbage in the conversation.
+                    val body = context.getString(R.string.mms_placeholder)
                     val address = message.displayOriginatingAddress
                         ?: message.originatingAddress
                         ?: continue
@@ -50,12 +51,28 @@ class MmsReceiver : BroadcastReceiver() {
                         MessageNotifier(context).notifyIncoming(conversation.id, address, body)
                     }
                 }
+                startDownload(context, intent)
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to handle WAP push", t)
             } finally {
                 runCatching { pendingResult.finish() }
             }
         }
+    }
+
+    /**
+     * Asks the download service to retrieve the content the notification points at.
+     * Best effort: without carrier MMSC configuration the retrieval cannot complete, so a
+     * failure here must not lose the notification we already stored.
+     */
+    private fun startDownload(context: Context, intent: Intent) {
+        runCatching {
+            val service = Intent(context, MmsDownloadService::class.java).apply {
+                data = intent.data
+                putExtras(intent)
+            }
+            context.startService(service)
+        }.onFailure { Log.w(TAG, "Unable to start the MMS download service", it) }
     }
 
     private companion object {

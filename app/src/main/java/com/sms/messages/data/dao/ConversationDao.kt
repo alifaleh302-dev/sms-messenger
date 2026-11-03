@@ -35,9 +35,6 @@ interface ConversationDao {
     @Query("SELECT * FROM conversations WHERE address = :address LIMIT 1")
     suspend fun getByAddress(address: String): ConversationEntity?
 
-    @Query("SELECT * FROM conversations WHERE address = :address LIMIT 1")
-    fun observeByAddress(address: String): Flow<ConversationEntity?>
-
     @Query("SELECT COALESCE(SUM(unreadCount), 0) FROM conversations")
     fun observeTotalUnread(): Flow<Int>
 

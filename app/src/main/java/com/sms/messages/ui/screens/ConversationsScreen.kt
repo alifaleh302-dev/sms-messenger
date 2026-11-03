@@ -183,7 +183,10 @@ private fun ConversationRow(
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = TimeFormat.relative(item.timestamp),
+                    text = TimeFormat.relative(
+                        timestamp = item.timestamp,
+                        nowLabel = stringResource(R.string.time_now),
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

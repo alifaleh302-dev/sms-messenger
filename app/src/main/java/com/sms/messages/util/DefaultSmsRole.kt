@@ -1,6 +1,5 @@
 package com.sms.messages.util
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -40,8 +39,4 @@ object DefaultSmsRole {
                 runCatching { context.startActivity(fallback) }
             }
     }
-
-    /** Explicit component used by the platform to validate the role request. */
-    fun roleComponent(context: Context): ComponentName =
-        ComponentName(context, com.sms.messages.sms.DefaultSmsRoleReceiver::class.java)
 }

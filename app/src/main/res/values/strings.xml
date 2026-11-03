@@ -144,7 +144,13 @@
     <string name="error_add_recipient">Add at least one recipient</string>
     <string name="error_message_empty">Message is empty</string>
     <string name="error_unable_send">Unable to send message</string>
-    <string name="notification_channel_service">Background service</string>
 
     <string name="notification_me">Me</string>
+
+    <string name="time_now">now</string>
+    <string name="time_today">Today</string>
+    <string name="time_yesterday">Yesterday</string>
+    <string name="error_send_failed">Message could not be sent</string>
+    <string name="recipients_more">+%1$d</string>
+    <string name="mms_placeholder">Multimedia message</string>
 </resources>

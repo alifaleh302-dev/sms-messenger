@@ -51,9 +51,6 @@ interface ScheduledMessageDao {
 
     @Query("DELETE FROM scheduled_messages WHERE id = :id")
     suspend fun deleteById(id: Long)
-
-    @Query("DELETE FROM scheduled_messages WHERE completed = 1")
-    suspend fun purgeCompleted()
 }
 
 @Dao

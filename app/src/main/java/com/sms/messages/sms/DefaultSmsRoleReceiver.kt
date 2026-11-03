@@ -1,8 +1,6 @@
 package com.sms.messages.sms
 
-import android.app.Activity
 import android.content.BroadcastReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
@@ -24,11 +22,5 @@ class DefaultSmsRoleReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "DefaultSmsRoleReceiver"
-
-        /** The component the platform uses to verify the default SMS role holder. */
-        fun component(context: Context): ComponentName =
-            ComponentName(context, DefaultSmsRoleReceiver::class.java)
-
-        const val RESULT_OK = Activity.RESULT_OK
     }
 }

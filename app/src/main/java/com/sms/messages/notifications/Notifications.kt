@@ -11,7 +11,6 @@ object Notifications {
 
     const val CHANNEL_MESSAGES = "messages"
     const val CHANNEL_SENDING = "sending"
-    const val CHANNEL_SERVICE = "mms_service"
 
     const val GROUP_KEY = "com.sms.messages.MESSAGES"
 
@@ -19,8 +18,6 @@ object Notifications {
     fun idForConversation(conversationId: Long): Int = (conversationId % Int.MAX_VALUE).toInt()
 
     const val SUMMARY_ID = 0x5A17
-    const val SENDING_ID = 0x5A18
-    const val SERVICE_ID = 0x5A19
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -52,15 +49,6 @@ object Notifications {
             setSound(null, null)
         }
 
-        val service = NotificationChannel(
-            CHANNEL_SERVICE,
-            context.getString(com.sms.messages.R.string.notification_channel_service),
-            NotificationManager.IMPORTANCE_MIN
-        ).apply {
-            setSound(null, null)
-            setShowBadge(false)
-        }
-
-        manager.createNotificationChannels(listOf(messages, sending, service))
+        manager.createNotificationChannels(listOf(messages, sending))
     }
 }

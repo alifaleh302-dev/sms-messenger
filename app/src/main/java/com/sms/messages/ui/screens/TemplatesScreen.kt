@@ -42,6 +42,7 @@ import com.sms.messages.data.TemplateEntity
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.viewmodel.TemplatesViewModel
 import com.sms.messages.ui.viewmodel.VmFactory
+import com.sms.messages.util.PhoneNumbers
 
 @Composable
 fun TemplatesScreen(
@@ -187,7 +188,7 @@ fun BlockedScreen(
                     viewModel.block(number)
                     number = ""
                 },
-                enabled = number.isNotBlank(),
+                enabled = PhoneNumbers.isValid(number),
             ) { Text(stringResource(R.string.action_block)) }
         }
         Spacer(Modifier.height(8.dp))
