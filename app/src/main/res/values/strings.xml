@@ -3,15 +3,11 @@
     <string name="app_name">Messages</string>
 
     <!-- Tabs -->
-    <string name="tab_chats">Chats</string>
     <string name="tab_archived">Archived</string>
-    <string name="tab_templates">Templates</string>
     <string name="tab_scheduled">Scheduled</string>
-    <string name="tab_settings">Settings</string>
 
     <!-- Common -->
     <string name="action_search">Search</string>
-    <string name="action_new_message">New message</string>
     <string name="action_send">Send</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
@@ -22,7 +18,6 @@
     <string name="action_copy">Copy</string>
     <string name="action_call">Call</string>
     <string name="action_save">Save</string>
-    <string name="action_retry">Retry</string>
     <string name="action_pin">Pin</string>
     <string name="action_unpin">Unpin</string>
     <string name="action_mark_read">Mark as read</string>
@@ -38,7 +33,6 @@
 
     <!-- Conversation -->
     <string name="message_hint">Text message</string>
-    <string name="message_sending">Sending…</string>
     <string name="message_sent">Sent</string>
     <string name="message_delivered">Delivered</string>
     <string name="message_failed">Not sent. Tap to retry.</string>
@@ -65,7 +59,6 @@
 
     <!-- Search -->
     <string name="search_title">Search messages</string>
-    <string name="search_hint">Search conversations and messages</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
@@ -121,10 +114,7 @@
     <string name="action_next">Next</string>
     <string name="action_mute">Mute</string>
     <string name="action_unmute">Unmute</string>
-    <string name="action_delete_conversation">Delete conversation</string>
     <string name="action_manage_blocked">Manage blocked numbers</string>
-    <string name="action_search_all">Search all messages</string>
-    <string name="archived_count">Archived (%1$d)</string>
     <string name="state_blocked">Blocked</string>
     <string name="empty_templates_hint">Save frequently used replies and reuse them while composing.</string>
     <string name="empty_scheduled_hint">Pick a date and time while composing to queue a message.</string>
@@ -139,7 +129,6 @@
     <string name="settings_import">Import messages</string>
     <string name="settings_sending">Sending</string>
     <string name="settings_about_summary">A complete SMS client: conversations, delivery reports, scheduled messages, templates, blocking and search.</string>
-    <string name="settings_import_result">Imported %1$d messages</string>
     <string name="settings_import_none">Nothing new to import</string>
     <string name="error_add_recipient">Add at least one recipient</string>
     <string name="error_message_empty">Message is empty</string>
@@ -155,15 +144,86 @@
     <string name="mms_placeholder">Multimedia message</string>
     <string name="start_chat">Start chat</string>
     <string name="search_conversations">Search conversations</string>
-    <string name="avatar_menu">Account menu</string>
     <string name="menu_archived">Archived</string>
     <string name="menu_spam_blocked">Spam &amp; blocked</string>
     <string name="menu_settings">Messages settings</string>
     <string name="menu_scheduled">Scheduled</string>
     <string name="menu_templates">Templates</string>
-    <string name="conversation_menu">Conversation options</string>
-    <string name="search_placeholder">Search</string>
     <string name="nav_back">Back</string>
-    <string name="chat_actions">More options</string>
     <string name="action_attach">Attach</string>
+
+
+    <!-- Google Messages feature parity: long-press actions, selection, starred, trash -->
+    <string name="action_reply">Reply</string>
+    <string name="action_forward">Forward</string>
+    <string name="action_star">Star</string>
+    <string name="action_unstar">Unstar</string>
+    <string name="action_share">Share</string>
+    <string name="action_info">Info</string>
+    <string name="action_select_more">Select more</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_copy_code">Copy code</string>
+    <string name="action_mark_unread">Mark as unread</string>
+    <string name="action_trash">Move to trash</string>
+    <string name="action_restore_conversation">Restore</string>
+    <string name="action_delete_forever">Delete forever</string>
+    <string name="menu_starred">Starred</string>
+    <string name="menu_trash">Trash</string>
+    <string name="menu_mark_all_read">Mark all as read</string>
+    <string name="title_starred">Starred</string>
+    <string name="title_trash">Trash</string>
+    <string name="title_details">Details</string>
+    <string name="empty_starred">No starred messages</string>
+    <string name="empty_starred_hint">Touch and hold a message and choose Star to keep it here.</string>
+    <string name="empty_trash">Trash is empty</string>
+    <string name="empty_trash_hint">Deleted conversations stay here for 30 days before they are removed for good.</string>
+    <string name="label_reply_to">Replying to</string>
+    <string name="label_starred">Starred</string>
+    <string name="label_from">From</string>
+    <string name="label_to">To</string>
+    <string name="label_sent">Sent</string>
+    <string name="label_received">Received</string>
+    <string name="label_type">Type</string>
+    <string name="label_status">Status</string>
+    <string name="label_type_sms">SMS</string>
+    <string name="label_sim">SIM</string>
+    <string name="label_sim_default">Default SIM</string>
+    <string name="trash_expires_today">Deleted today</string>
+    <string name="dialog_delete_messages_title">Delete messages?</string>
+    <string name="dialog_delete_conversation_title">Move to trash?</string>
+    <string name="dialog_delete_conversation_body">The conversation moves to trash and is removed automatically after 30 days.</string>
+    <string name="dialog_delete_forever_title">Delete forever?</string>
+    <string name="dialog_delete_forever_body">This cannot be undone.</string>
+    <string name="toast_copied">Copied</string>
+    <string name="toast_code_copied">Code copied</string>
+    <string name="toast_starred">Message starred</string>
+    <string name="toast_unstarred">Star removed</string>
+    <string name="toast_trashed">Moved to trash</string>
+    <string name="toast_deleted">Deleted</string>
+    <string name="toast_nothing_to_share">Nothing selected to share</string>
+    <string name="cd_selected">Selected</string>
+    <string name="cd_not_selected">Not selected</string>
+    <string name="cd_reply_quoted">Quoted message</string>
+    <string name="cd_starred">Starred</string>
+    <string name="action_close">Close</string>
+    <string name="settings_storage">Storage</string>
+    <string name="settings_trash_summary">Deleted conversations are kept in trash for 30 days so they can be recovered, then removed automatically.</string>
+    <string name="filter_unread">Unread</string>
+
+    <plurals name="selection_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <plurals name="dialog_delete_messages_body">
+        <item quantity="one">This permanently deletes %1$d message and cannot be undone.</item>
+        <item quantity="other">This permanently deletes %1$d messages and cannot be undone.</item>
+    </plurals>
+    <plurals name="settings_import_result">
+        <item quantity="one">Imported %1$d message</item>
+        <item quantity="other">Imported %1$d messages</item>
+    </plurals>
 </resources>

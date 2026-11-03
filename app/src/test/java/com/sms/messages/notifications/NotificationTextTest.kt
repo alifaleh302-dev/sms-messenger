@@ -69,9 +69,9 @@ class NotificationTextTest {
     fun `placeholder arguments survive translation`() {
         val arabic = androidContext("ar")
         // Arabic renders digits as Arabic-Indic numerals, which is the correct local form.
-        val imported = arabic.getString(R.string.settings_import_result, 5)
+        val imported = arabic.resources.getQuantityString(R.plurals.settings_import_result, 5, 5)
         assertTrue("the count was not substituted: $imported", imported.contains("\u0665"))
-        assertTrue("the surrounding words were lost: $imported", imported.contains("رسالة"))
+        assertTrue("the surrounding words were lost: $imported", imported.contains("رسائل"))
 
         val more = arabic.getString(R.string.recipients_more, 3)
         assertTrue("the count was not substituted: $more", more.contains("\u0663"))
@@ -80,7 +80,7 @@ class NotificationTextTest {
     @Test
     fun `english keeps western digits in placeholders`() {
         val english = androidContext("en")
-        assertEquals("Imported 5 messages", english.getString(R.string.settings_import_result, 5))
+        assertEquals("Imported 5 messages", english.resources.getQuantityString(R.plurals.settings_import_result, 5, 5))
         assertEquals("+3", english.getString(R.string.recipients_more, 3))
     }
 

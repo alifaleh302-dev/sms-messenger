@@ -21,6 +21,8 @@ data class ConversationEntity(
     val muted: Boolean = false,
     val draft: String = "",
     val colorIndex: Int = 0,
+    /** When the conversation was moved to trash, or 0 while it is live. */
+    val trashedAt: Long = 0,
 )
 
 @Entity(
@@ -37,6 +39,7 @@ data class ConversationEntity(
         Index("conversationId"),
         Index("address"),
         Index("timestamp"),
+        Index("starred"),
     ]
 )
 data class MessageEntity(
@@ -54,6 +57,38 @@ data class MessageEntity(
     val attachmentMime: String? = null,
     val attachmentName: String? = null,
     val externalId: Long? = null,
+    val starred: Boolean = false,
+    /**
+     * The message this one quotes, for the "reply to a specific message" flow. A plain
+     * column rather than a foreign key on purpose: the quoted message may be deleted
+     * while the reply stays, and losing the quote must not delete the reply.
+     */
+    val replyToId: Long? = null,
+)
+
+/**
+ * One row per (message, emoji) pair. Keeping a counter instead of a row per reaction means
+ * an inbound burst of reactions from a group chat stays a single row to update.
+ */
+@Entity(
+    tableName = "reactions",
+    primaryKeys = ["messageId", "emoji"],
+    foreignKeys = [
+        ForeignKey(
+            entity = MessageEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["messageId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("messageId")]
+)
+data class ReactionEntity(
+    val messageId: Long,
+    val emoji: String,
+    val count: Int = 1,
+    /** True when this device added the reaction, which is the only one it may remove. */
+    val mine: Boolean = false,
 )
 
 @Entity(tableName = "templates")

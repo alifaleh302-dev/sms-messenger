@@ -15,3 +15,6 @@ keystore.properties
 # Agent workspace
 .openhands/
 .agent_tmp/
+
+# Kotlin compiler session state
+.kotlin/

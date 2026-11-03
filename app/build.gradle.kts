@@ -21,8 +21,8 @@ android {
         applicationId = "com.sms.messages"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.1.0"
+        versionCode = 5
+        versionName = "1.2.0"
         vectorDrawables.useSupportLibrary = true
     }
 
@@ -117,6 +117,8 @@ dependencies {
     // resource system are exercised for real on the JVM instead of being stubbed.
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.androidx.sqlite)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

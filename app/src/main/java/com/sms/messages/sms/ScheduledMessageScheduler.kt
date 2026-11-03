@@ -23,11 +23,10 @@ object ScheduledMessageScheduler {
         val pending = pendingIntent(context, id)
         val canExact = canScheduleExact(alarmManager)
         runCatching {
-            when {
-                canExact && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pending)
-
-                else -> alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pending)
+            if (canExact) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pending)
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, atMillis, pending)
             }
         }.onFailure { Log.w(TAG, "Failed to arm alarm for scheduled message $id", it) }
     }

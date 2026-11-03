@@ -14,7 +14,9 @@ import com.sms.messages.R
 import com.sms.messages.data.AppSettings
 import com.sms.messages.data.MessageEntity
 import com.sms.messages.data.MessageStatus
+import com.sms.messages.data.ConversationEntity
 import com.sms.messages.data.MessageType
+import com.sms.messages.data.ReactionEntity
 import com.sms.messages.notifications.MessageNotifier
 import com.sms.messages.util.PhoneNumbers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -45,7 +48,17 @@ data class ChatUiState(
     val pinned: Boolean = false,
     val muted: Boolean = false,
     val subscriptionId: Int = -1,
-)
+    /** Reactions for the whole conversation, keyed by message id. */
+    val reactions: Map<Long, List<ReactionEntity>> = emptyMap(),
+    /** Message ids currently selected in multi-select mode. */
+    val selectedIds: Set<Long> = emptySet(),
+    /** The message the composer is quoting, if any. */
+    val replyTo: MessageEntity? = null,
+    /** The message whose details dialog is open. */
+    val detailsFor: MessageEntity? = null,
+) {
+    val inSelectionMode: Boolean get() = selectedIds.isNotEmpty()
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -64,14 +77,35 @@ class ChatViewModel @Inject constructor(
     private val blocked = MutableStateFlow(false)
     private val sendFailure = MutableStateFlow(false)
     private val settings = MutableStateFlow(AppSettings())
+    private val selectedIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val replyToId = MutableStateFlow<Long?>(null)
+    private val detailsFor = MutableStateFlow<MessageEntity?>(null)
 
-    val uiState: StateFlow<ChatUiState> = combine(
+    private val uiInputs: Flow<UiInputs> = combine(
         repository.observeConversation(conversationId),
         repository.observeMessages(conversationId),
-        draft,
-        blocked,
-        settings,
-    ) { conversation, messages, draftText, isBlocked, appSettings ->
+        repository.observeReactionsIn(conversationId),
+    ) { conversation, messages, reactions ->
+        UiInputs(conversation, messages, reactions)
+    }
+
+    private val localState: Flow<LocalState> = combine(
+        draft, blocked, settings, selectedIds, replyToId, detailsFor,
+    ) { values ->
+        @Suppress("UNCHECKED_CAST")
+        LocalState(
+            draft = values[0] as String,
+            blocked = values[1] as Boolean,
+            settings = values[2] as AppSettings,
+            selectedIds = values[3] as Set<Long>,
+            replyToId = values[4] as Long?,
+            detailsFor = values[5] as MessageEntity?,
+        )
+    }
+
+    val uiState: StateFlow<ChatUiState> = combine(uiInputs, localState) { inputs, local ->
+        val conversation = inputs.conversation
+        val messages = inputs.messages
         val address = conversation?.address.orEmpty()
         val title = conversation?.displayName?.takeIf { it.isNotBlank() }
             ?: PhoneNumbers.format(address).ifEmpty { context.getString(R.string.unknown_contact) }
@@ -81,15 +115,34 @@ class ChatViewModel @Inject constructor(
             title = title,
             colorIndex = conversation?.colorIndex ?: 0,
             messages = messages,
-            draft = draftText,
-            settings = appSettings,
-            blocked = isBlocked,
+            draft = local.draft,
+            settings = local.settings,
+            blocked = local.blocked,
             archived = conversation?.archived ?: false,
             pinned = conversation?.pinned ?: false,
             muted = conversation?.muted ?: false,
-            subscriptionId = appSettings.defaultSubscriptionId,
+            subscriptionId = local.settings.defaultSubscriptionId,
+            reactions = inputs.reactions.groupBy { it.messageId },
+            selectedIds = local.selectedIds,
+            replyTo = local.replyToId?.let { target -> messages.firstOrNull { it.id == target } },
+            detailsFor = local.detailsFor,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
+
+    private data class UiInputs(
+        val conversation: ConversationEntity?,
+        val messages: List<MessageEntity>,
+        val reactions: List<ReactionEntity>,
+    )
+
+    private data class LocalState(
+        val draft: String,
+        val blocked: Boolean,
+        val settings: AppSettings,
+        val selectedIds: Set<Long>,
+        val replyToId: Long?,
+        val detailsFor: MessageEntity?,
+    )
 
     init {
         viewModelScope.launch {
@@ -126,7 +179,9 @@ class ChatViewModel @Inject constructor(
         if (body.isEmpty()) return
         val address = uiState.value.address
         if (address.isBlank()) return
+        val quoted = replyToId.value
         draft.value = ""
+        replyToId.value = null
         viewModelScope.launch {
             val settingsValue = settings.value
             runCatching {
@@ -135,6 +190,7 @@ class ChatViewModel @Inject constructor(
                     body = body,
                     subscriptionId = settingsValue.defaultSubscriptionId,
                     deliveryReport = settingsValue.deliveryReports,
+                    replyToId = quoted,
                 )
             }.onFailure {
                 Log.w("ChatViewModel", "Unable to send message", it)
@@ -152,10 +208,6 @@ class ChatViewModel @Inject constructor(
         repository.retryMessage(messageId, settings.value.deliveryReports)
     }
 
-    fun deleteMessage(messageId: Long) = viewModelScope.launch {
-        repository.deleteMessage(messageId)
-    }
-
     val sendFailed: StateFlow<Boolean> = sendFailure.asStateFlow()
 
     fun markRead() = viewModelScope.launch {
@@ -166,6 +218,10 @@ class ChatViewModel @Inject constructor(
     fun deleteConversation() = viewModelScope.launch {
         notifier.cancel(conversationId)
         repository.deleteConversation(conversationId)
+    }
+
+    fun restoreConversation() = viewModelScope.launch {
+        repository.restoreConversation(conversationId)
     }
 
     fun toggleArchive() = viewModelScope.launch {
@@ -192,4 +248,82 @@ class ChatViewModel @Inject constructor(
 
     fun statusOf(message: MessageEntity): MessageStatus =
         if (message.type == MessageType.INBOX) MessageStatus.NONE else message.status
+
+    // ------------------------------------------------------------ message actions
+
+    fun toggleStar(message: MessageEntity) = viewModelScope.launch {
+        repository.setStarred(message.id, !message.starred)
+    }
+
+    fun toggleReaction(messageId: Long, emoji: String) = viewModelScope.launch {
+        repository.toggleReaction(messageId, emoji)
+    }
+
+    fun startReply(message: MessageEntity) {
+        replyToId.value = message.id
+    }
+
+    fun cancelReply() {
+        replyToId.value = null
+    }
+
+    fun showDetails(message: MessageEntity) {
+        detailsFor.value = message
+    }
+
+    fun hideDetails() {
+        detailsFor.value = null
+    }
+
+    fun deleteMessage(messageId: Long) = viewModelScope.launch {
+        repository.deleteMessage(messageId)
+    }
+
+    /** Moves the conversation to trash instead of erasing it, so it can be recovered. */
+    fun trashConversation() = viewModelScope.launch {
+        notifier.cancel(conversationId)
+        repository.trashConversation(conversationId)
+    }
+
+    // ------------------------------------------------------------ multi-select
+
+    fun toggleSelection(messageId: Long) {
+        selectedIds.value = selectedIds.value.let { current ->
+            if (messageId in current) current - messageId else current + messageId
+        }
+    }
+
+    fun clearSelection() {
+        selectedIds.value = emptySet()
+    }
+
+    fun selectAll() {
+        selectedIds.value = uiState.value.messages.map { it.id }.toSet()
+    }
+
+    fun deleteSelected() = viewModelScope.launch {
+        val ids = selectedIds.value.toList()
+        if (ids.isEmpty()) return@launch
+        selectedIds.value = emptySet()
+        repository.deleteMessages(ids)
+    }
+
+    fun starSelected() = viewModelScope.launch {
+        val ids = selectedIds.value
+        if (ids.isEmpty()) return@launch
+        ids.forEach { repository.setStarred(it, true) }
+        selectedIds.value = emptySet()
+    }
+
+    /**
+     * Collects the selected messages into one block of text so they can be shared. Copies
+     * only what is visible in the conversation, oldest first.
+     */
+    fun selectedText(): String {
+        val ids = selectedIds.value
+        return uiState.value.messages
+            .filter { it.id in ids }
+            .joinToString("\n") { it.body }
+            .trim()
+    }
 }

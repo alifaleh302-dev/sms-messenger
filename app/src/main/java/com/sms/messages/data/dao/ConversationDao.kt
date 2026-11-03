@@ -14,18 +14,34 @@ interface ConversationDao {
     @Query(
         """
         SELECT * FROM conversations
-        WHERE archived = 0
+        WHERE archived = 0 AND trashedAt = 0
         ORDER BY pinned DESC, lastMessageAt DESC
         """
     )
     fun observeActive(): Flow<List<ConversationEntity>>
 
-    @Query("SELECT * FROM conversations WHERE archived = 1 ORDER BY lastMessageAt DESC")
+    @Query(
+        """
+        SELECT * FROM conversations
+        WHERE archived = 1 AND trashedAt = 0
+        ORDER BY lastMessageAt DESC
+        """
+    )
     fun observeArchived(): Flow<List<ConversationEntity>>
+
+    /** Conversations sitting in trash, newest first, awaiting purge or restore. */
+    @Query("SELECT * FROM conversations WHERE trashedAt > 0 ORDER BY trashedAt DESC")
+    fun observeTrashed(): Flow<List<ConversationEntity>>
 
     /** Every conversation, archived included. Use [observeActive] for the visible list. */
     @Query("SELECT * FROM conversations ORDER BY lastMessageAt DESC")
     suspend fun getAll(): List<ConversationEntity>
+
+    @Query("SELECT * FROM conversations WHERE trashedAt > 0 AND trashedAt <= :cutoff")
+    suspend fun getTrashedBefore(cutoff: Long): List<ConversationEntity>
+
+    @Query("SELECT COUNT(*) FROM conversations WHERE trashedAt > 0")
+    fun observeTrashCount(): Flow<Int>
 
     @Query("SELECT * FROM conversations WHERE id = :id")
     fun observeById(id: Long): Flow<ConversationEntity?>
@@ -62,6 +78,12 @@ interface ConversationDao {
 
     @Query("UPDATE conversations SET draft = :draft WHERE id = :id")
     suspend fun setDraft(id: Long, draft: String)
+
+    @Query("UPDATE conversations SET trashedAt = :trashedAt WHERE id = :id")
+    suspend fun setTrashedAt(id: Long, trashedAt: Long)
+
+    @Query("UPDATE conversations SET unreadCount = :count, trashedAt = 0, archived = 0 WHERE id = :id")
+    suspend fun restoreFromTrash(id: Long, count: Int)
 
     @Query("UPDATE conversations SET displayName = :name WHERE id = :id")
     suspend fun setDisplayName(id: Long, name: String?)

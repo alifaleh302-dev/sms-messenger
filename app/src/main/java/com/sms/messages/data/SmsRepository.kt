@@ -22,6 +22,7 @@ class SmsRepository(
 
     private val conversations = database.conversations()
     private val messages = database.messages()
+    private val reactions = database.reactions()
     private val templates = database.templates()
     private val scheduled = database.scheduled()
     private val blocked = database.blocked()
@@ -47,9 +48,35 @@ class SmsRepository(
 
     fun observeBlocked(): Flow<List<BlockedNumberEntity>> = blocked.observeAll()
 
-    fun search(query: String): Flow<List<SearchResult>> =
-        messages.search(SearchQuery.escapeLike(query)).map { hits ->
-            hits.map { hit ->
+    fun observeTrashed(): Flow<List<ConversationEntity>> = conversations.observeTrashed()
+
+    fun observeTrashCount(): Flow<Int> = conversations.observeTrashCount()
+
+    fun observeStarred(): Flow<List<MessageEntity>> = messages.observeStarred()
+
+    fun observeStarredCount(): Flow<Int> = messages.observeStarredCount()
+
+    fun observeReactions(messageId: Long): Flow<List<ReactionEntity>> =
+        reactions.observeForMessage(messageId)
+
+    fun observeReactionsIn(conversationId: Long): Flow<List<ReactionEntity>> =
+        reactions.observeForConversation(conversationId)
+
+    suspend fun reactionsFor(messageId: Long): List<ReactionEntity> = reactions.getForMessage(messageId)
+
+    fun search(
+        query: String,
+        starredOnly: Boolean = false,
+        unreadOnly: Boolean = false,
+    ): Flow<List<SearchResult>> {
+        val escaped = SearchQuery.escapeLike(query)
+        val hits = when {
+            escaped.isBlank() && (starredOnly || unreadOnly) ->
+                messages.filterOnly(starredOnly, unreadOnly)
+            else -> messages.search(escaped, starredOnly, unreadOnly)
+        }
+        return hits.map { rows ->
+            rows.map { hit ->
                 SearchResult(
                     messageId = hit.id,
                     conversationId = hit.conversationId,
@@ -57,9 +84,12 @@ class SmsRepository(
                     displayName = hit.displayName,
                     body = hit.body,
                     timestamp = hit.timestamp,
+                    starred = hit.starred,
+                    read = hit.read,
                 )
             }
         }
+    }
 
     /** Resolves the conversation for an address, creating it on first contact. */
     suspend fun ensureConversation(address: String, displayName: String? = null): ConversationEntity {
@@ -97,6 +127,17 @@ class SmsRepository(
         conversations.setUnreadCount(id, 0)
     }
 
+    /** Flags the newest inbound message unread so the conversation shows a badge again. */
+    suspend fun markConversationUnread(id: Long) {
+        val target = messages.getLatestInbound(id, MessageType.INBOX)
+        if (target == null) {
+            conversations.setUnreadCount(id, 1)
+            return
+        }
+        messages.update(target.copy(read = false))
+        conversations.setUnreadCount(id, messages.countUnread(id).coerceAtLeast(1))
+    }
+
     suspend fun deleteConversation(id: Long) {
         messages.deleteForConversation(id)
         conversations.deleteById(id)
@@ -106,6 +147,90 @@ class SmsRepository(
         val message = messages.getById(id) ?: return
         messages.deleteById(id)
         refreshConversationSummary(message.conversationId)
+    }
+
+    /** Deletes several messages at once, e.g. from multi-select, then fixes the summary. */
+    suspend fun deleteMessages(ids: List<Long>) {
+        if (ids.isEmpty()) return
+        val affected = ids.mapNotNull { messages.getById(it)?.conversationId }.toSet()
+        messages.deleteByIds(ids)
+        affected.forEach { refreshConversationSummary(it) }
+    }
+
+    suspend fun setStarred(id: Long, starred: Boolean) = messages.setStarred(id, starred)
+
+    suspend fun toggleStar(id: Long, starred: Boolean) = messages.setStarred(id, !starred)
+
+    /**
+     * Adds or removes this device's reaction. Tapping the emoji it already reacted with
+     * removes it; any other emoji replaces the previous one, matching Messages, where you
+     * hold a single reaction per message.
+     */
+    suspend fun toggleReaction(messageId: Long, emoji: String) {
+        val existing = reactions.get(messageId, emoji)
+        if (existing != null && existing.mine) {
+            if (existing.count <= 1) {
+                reactions.delete(messageId, emoji)
+            } else {
+                reactions.update(existing.copy(count = existing.count - 1, mine = false))
+            }
+            return
+        }
+        // Only one reaction of our own per message, so clear the others first.
+        reactions.getForMessage(messageId)
+            .filter { it.mine }
+            .forEach { mine ->
+                if (mine.count <= 1) {
+                    reactions.delete(messageId, mine.emoji)
+                } else {
+                    reactions.update(mine.copy(count = mine.count - 1, mine = false))
+                }
+            }
+        if (existing != null) {
+            reactions.update(existing.copy(count = existing.count + 1, mine = true))
+        } else {
+            reactions.upsert(ReactionEntity(messageId = messageId, emoji = emoji, count = 1, mine = true))
+        }
+    }
+
+    /**
+     * Records a reaction that arrived from the network. Reactions sent over SMS/MMS come in
+     * as text, so they are never attributed to this device.
+     */
+    suspend fun applyIncomingReaction(messageId: Long, emoji: String) {
+        val existing = reactions.get(messageId, emoji)
+        if (existing == null) {
+            reactions.upsert(ReactionEntity(messageId = messageId, emoji = emoji, count = 1, mine = false))
+        } else {
+            reactions.update(existing.copy(count = existing.count + 1))
+        }
+    }
+
+    /** The message a reply quotes, for rendering the quoted strip. */
+    suspend fun quotedMessage(replyToId: Long?): MessageEntity? =
+        replyToId?.let { messages.getById(it) }
+
+    // ---------------------------------------------------------------- trash
+
+    /** Moves a conversation to trash. It stays recoverable for [TRASH_RETENTION_MILLIS]. */
+    suspend fun trashConversation(id: Long) {
+        conversations.setTrashedAt(id, System.currentTimeMillis())
+    }
+
+    suspend fun restoreConversation(id: Long) {
+        conversations.restoreFromTrash(id, messages.countUnread(id))
+    }
+
+    /** Permanently removes a conversation and its messages. */
+    suspend fun purgeConversation(id: Long) = deleteConversation(id)
+
+    /** Drops conversations that have sat in trash for longer than the retention window. */
+    suspend fun purgeExpiredTrash(): Int {
+        val cutoff = System.currentTimeMillis() - TRASH_RETENTION_MILLIS
+        val expired = conversations.getTrashedBefore(cutoff)
+        expired.forEach { conversations.deleteById(it.id) }
+        if (expired.isNotEmpty()) Log.i(TAG, "Purged ${expired.size} expired trashed conversations")
+        return expired.size
     }
 
     // ---------------------------------------------------------------- incoming
@@ -152,6 +277,7 @@ class SmsRepository(
         body: String,
         subscriptionId: Int,
         deliveryReport: Boolean,
+        replyToId: Long? = null,
     ): Long {
         if (!PhoneNumbers.isValid(address)) {
             throw IllegalArgumentException(context.getString(R.string.error_invalid_number))
@@ -169,6 +295,7 @@ class SmsRepository(
                 status = MessageStatus.PENDING,
                 read = true,
                 subscriptionId = subscriptionId,
+                replyToId = replyToId,
             )
         )
         conversations.touch(conversation.id, body, now)
@@ -343,11 +470,14 @@ class SmsRepository(
         conversations.observeArchived(),
     ) { active, archived -> (active + archived).sumOf { it.unreadCount } }
 
-    private companion object {
-        const val TAG = "SmsRepository"
+    companion object {
+        private const val TAG = "SmsRepository"
 
         /** Only failures from the last hour are retried automatically. */
         const val RETRY_WINDOW_MILLIS = 60L * 60L * 1000L
+
+        /** How long a trashed conversation stays recoverable, matching Messages' 30 days. */
+        const val TRASH_RETENTION_MILLIS = 30L * 24L * 60L * 60L * 1000L
         const val MAX_AUTO_RETRIES = 5
     }
 }
@@ -359,4 +489,6 @@ data class SearchResult(
     val displayName: String?,
     val body: String,
     val timestamp: Long,
+    val starred: Boolean = false,
+    val read: Boolean = true,
 )

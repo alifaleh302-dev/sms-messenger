@@ -79,6 +79,12 @@ class ConversationsViewModel @Inject constructor(
     val unreadTotal: StateFlow<Int> = repository.observeTotalUnread()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
+    val starredCount: StateFlow<Int> = repository.observeStarredCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    val trashCount: StateFlow<Int> = repository.observeTrashCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     fun onQueryChange(value: String) {
         query.value = value
     }
@@ -95,7 +101,16 @@ class ConversationsViewModel @Inject constructor(
 
     fun markRead(id: Long) = viewModelScope.launch { repository.markConversationRead(id) }
 
+    fun markUnread(id: Long) = viewModelScope.launch { repository.markConversationUnread(id) }
+
+    /** Moves to trash rather than erasing, so the conversation stays recoverable. */
+    fun trash(id: Long) = viewModelScope.launch { repository.trashConversation(id) }
+
     fun delete(id: Long) = viewModelScope.launch { repository.deleteConversation(id) }
+
+    fun markAllRead() = viewModelScope.launch {
+        uiState.value.items.forEach { repository.markConversationRead(it.id) }
+    }
 
     fun block(address: String) = viewModelScope.launch { repository.blockNumber(address) }
 

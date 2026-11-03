@@ -8,6 +8,7 @@ import androidx.room.TypeConverters
 import com.sms.messages.data.dao.BlockedNumberDao
 import com.sms.messages.data.dao.ConversationDao
 import com.sms.messages.data.dao.MessageDao
+import com.sms.messages.data.dao.ReactionDao
 import com.sms.messages.data.dao.ScheduledMessageDao
 import com.sms.messages.data.dao.TemplateDao
 
@@ -15,11 +16,12 @@ import com.sms.messages.data.dao.TemplateDao
     entities = [
         ConversationEntity::class,
         MessageEntity::class,
+        ReactionEntity::class,
         TemplateEntity::class,
         ScheduledMessageEntity::class,
         BlockedNumberEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -27,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun conversations(): ConversationDao
     abstract fun messages(): MessageDao
+    abstract fun reactions(): ReactionDao
     abstract fun templates(): TemplateDao
     abstract fun scheduled(): ScheduledMessageDao
     abstract fun blocked(): BlockedNumberDao
@@ -42,7 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java,
                 NAME
             )
-                .fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_1_2)
                 .build()
                 .also { instance = it }
         }

@@ -65,7 +65,7 @@ class SettingsViewModel @Inject constructor(
     fun importFromTelephony() = viewModelScope.launch {
         val count = repository.syncFromTelephony()
         _message.value = if (count > 0) {
-            context.getString(R.string.settings_import_result, count)
+            context.resources.getQuantityString(R.plurals.settings_import_result, count, count)
         } else {
             context.getString(R.string.settings_import_none)
         }

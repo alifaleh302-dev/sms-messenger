@@ -23,7 +23,9 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DatePicker
@@ -31,6 +33,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -324,6 +327,8 @@ fun SearchScreen(
 ) {
     val results by viewModel.results.collectAsStateWithLifecycle()
     val query by viewModel.currentQuery.collectAsStateWithLifecycle()
+    val starredFilter by viewModel.isStarredFilter.collectAsStateWithLifecycle()
+    val unreadFilter by viewModel.isUnreadFilter.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize()) {
         TopBar(title = stringResource(R.string.action_search), onBack = onBack)
@@ -336,11 +341,30 @@ fun SearchScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
         )
-        Spacer(Modifier.height(8.dp))
+        // The same quick filters Messages offers under the search field.
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = starredFilter,
+                onClick = viewModel::toggleStarredFilter,
+                label = { Text(stringResource(R.string.menu_starred)) },
+                leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },
+            )
+            FilterChip(
+                selected = unreadFilter,
+                onClick = viewModel::toggleUnreadFilter,
+                label = { Text(stringResource(R.string.filter_unread)) },
+                leadingIcon = { Icon(Icons.Filled.MarkEmailUnread, contentDescription = null) },
+            )
+        }
+        Spacer(Modifier.height(4.dp))
         if (results.isEmpty()) {
+            val showHint = query.length < 2 && !starredFilter && !unreadFilter
             EmptyState(
                 icon = Icons.Filled.Search,
-                title = if (query.length < 2) {
+                title = if (showHint) {
                     stringResource(R.string.search_min_chars)
                 } else {
                     stringResource(R.string.empty_search)
@@ -356,6 +380,15 @@ fun SearchScreen(
                             .padding(horizontal = 16.dp, vertical = 10.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (result.starred) {
+                                Icon(
+                                    imageVector = Icons.Filled.Star,
+                                    contentDescription = stringResource(R.string.cd_starred),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                            }
                             Text(
                                 text = result.displayName ?: result.address,
                                 style = MaterialTheme.typography.titleMedium,

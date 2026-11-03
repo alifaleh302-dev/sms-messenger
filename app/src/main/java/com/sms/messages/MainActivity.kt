@@ -42,8 +42,10 @@ import com.sms.messages.ui.screens.ConversationsScreen
 import com.sms.messages.ui.screens.PermissionScreen
 import com.sms.messages.ui.screens.ScheduledScreen
 import com.sms.messages.ui.screens.SearchScreen
+import com.sms.messages.ui.screens.StarredScreen
 import com.sms.messages.ui.screens.SettingsScreen
 import com.sms.messages.ui.screens.TemplatesScreen
+import com.sms.messages.ui.screens.TrashScreen
 import com.sms.messages.ui.theme.SmsTheme
 import com.sms.messages.ui.viewmodel.SettingsViewModel
 import com.sms.messages.util.Permissions
@@ -156,6 +158,8 @@ private object Routes {
     const val SCHEDULED = "scheduled"
     const val BLOCKED = "blocked"
     const val SETTINGS = "settings"
+    const val STARRED = "starred"
+    const val TRASH = "trash"
 
     fun chat(id: Long) = "chat/$id"
     fun compose(address: String? = null) =
@@ -199,6 +203,8 @@ private fun MessagesApp(
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                         onOpenScheduled = { navController.navigate(Routes.SCHEDULED) },
                         onOpenTemplates = { navController.navigate(Routes.TEMPLATES) },
+                        onOpenStarred = { navController.navigate(Routes.STARRED) },
+                        onOpenTrash = { navController.navigate(Routes.TRASH) },
                     )
                 }
                 composable(
@@ -238,7 +244,19 @@ private fun MessagesApp(
                     BlockedScreen(onBack = { navController.popBackStack() })
                 }
                 composable(Routes.SETTINGS) {
-                    SettingsScreen(onOpenBlocked = { navController.navigate(Routes.BLOCKED) })
+                    SettingsScreen(
+                        onOpenBlocked = { navController.navigate(Routes.BLOCKED) },
+                        onOpenTrash = { navController.navigate(Routes.TRASH) },
+                    )
+                }
+                composable(Routes.STARRED) {
+                    StarredScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenConversation = { navController.navigate(Routes.chat(it)) },
+                    )
+                }
+                composable(Routes.TRASH) {
+                    TrashScreen(onBack = { navController.popBackStack() })
                 }
             }
         }

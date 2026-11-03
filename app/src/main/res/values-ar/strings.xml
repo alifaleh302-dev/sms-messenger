@@ -1,15 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">الرسائل</string>
-
-    <string name="tab_chats">المحادثات</string>
     <string name="tab_archived">المؤرشفة</string>
-    <string name="tab_templates">القوالب</string>
     <string name="tab_scheduled">المجدولة</string>
-    <string name="tab_settings">الإعدادات</string>
 
     <string name="action_search">بحث</string>
-    <string name="action_new_message">رسالة جديدة</string>
     <string name="action_send">إرسال</string>
     <string name="action_cancel">إلغاء</string>
     <string name="action_delete">حذف</string>
@@ -20,7 +15,6 @@
     <string name="action_copy">نسخ</string>
     <string name="action_call">اتصال</string>
     <string name="action_save">حفظ</string>
-    <string name="action_retry">إعادة المحاولة</string>
     <string name="action_pin">تثبيت</string>
     <string name="action_unpin">إلغاء التثبيت</string>
     <string name="action_mark_read">تحديد كمقروء</string>
@@ -34,7 +28,6 @@
     <string name="empty_search">لا توجد نتائج</string>
 
     <string name="message_hint">رسالة نصية</string>
-    <string name="message_sending">جارٍ الإرسال…</string>
     <string name="message_sent">تم الإرسال</string>
     <string name="message_delivered">تم التسليم</string>
     <string name="message_failed">لم يتم الإرسال. اضغط لإعادة المحاولة.</string>
@@ -57,7 +50,6 @@
     <string name="template_insert">إدراج</string>
 
     <string name="search_title">بحث في الرسائل</string>
-    <string name="search_hint">ابحث في المحادثات والرسائل</string>
 
     <string name="settings_title">الإعدادات</string>
     <string name="settings_default_sms">التطبيق الافتراضي للرسائل</string>
@@ -108,10 +100,7 @@
     <string name="action_next">التالي</string>
     <string name="action_mute">كتم</string>
     <string name="action_unmute">إلغاء الكتم</string>
-    <string name="action_delete_conversation">حذف المحادثة</string>
     <string name="action_manage_blocked">إدارة الأرقام المحظورة</string>
-    <string name="action_search_all">بحث في كل الرسائل</string>
-    <string name="archived_count">المؤرشفة (%1$d)</string>
     <string name="state_blocked">محظور</string>
     <string name="empty_templates_hint">احفظ الردود المتكررة وأعد استخدامها أثناء الكتابة.</string>
     <string name="empty_scheduled_hint">اختر التاريخ والوقت أثناء الكتابة لجدولة الرسالة.</string>
@@ -126,7 +115,6 @@
     <string name="settings_import">استيراد الرسائل</string>
     <string name="settings_sending">الإرسال</string>
     <string name="settings_about_summary">تطبيق رسائل متكامل: المحادثات، تقارير التسليم، الرسائل المجدولة، القوالب، الحظر والبحث.</string>
-    <string name="settings_import_result">تم استيراد %1$d رسالة</string>
     <string name="settings_import_none">لا يوجد جديد للاستيراد</string>
     <string name="error_add_recipient">أضف مستلماً واحداً على الأقل</string>
     <string name="error_message_empty">الرسالة فارغة</string>
@@ -142,15 +130,102 @@
     <string name="mms_placeholder">رسالة وسائط</string>
     <string name="start_chat">محادثة جديدة</string>
     <string name="search_conversations">ابحث في المحادثات</string>
-    <string name="avatar_menu">قائمة الحساب</string>
     <string name="menu_archived">المؤرشفة</string>
     <string name="menu_spam_blocked">الرسائل المزعجة والمحظورة</string>
     <string name="menu_settings">إعدادات الرسائل</string>
     <string name="menu_scheduled">المجدولة</string>
     <string name="menu_templates">القوالب</string>
-    <string name="conversation_menu">خيارات المحادثة</string>
-    <string name="search_placeholder">بحث</string>
     <string name="nav_back">رجوع</string>
-    <string name="chat_actions">خيارات أخرى</string>
     <string name="action_attach">إرفاق</string>
+
+
+    <!-- Google Messages feature parity: long-press actions, selection, starred, trash -->
+    <string name="action_reply">رد</string>
+    <string name="action_forward">إعادة توجيه</string>
+    <string name="action_star">إضافة إلى المميّزة</string>
+    <string name="action_unstar">إزالة من المميّزة</string>
+    <string name="action_share">مشاركة</string>
+    <string name="action_info">معلومات</string>
+    <string name="action_select_more">تحديد المزيد</string>
+    <string name="action_select_all">تحديد الكل</string>
+    <string name="action_copy_code">نسخ الرمز</string>
+    <string name="action_mark_unread">وضع علامة غير مقروء</string>
+    <string name="action_trash">نقل إلى المهملات</string>
+    <string name="action_restore_conversation">استعادة</string>
+    <string name="action_delete_forever">حذف نهائي</string>
+    <string name="menu_starred">المميّزة</string>
+    <string name="menu_trash">المهملات</string>
+    <string name="menu_mark_all_read">وضع علامة مقروء للكل</string>
+    <string name="title_starred">الرسائل المميّزة</string>
+    <string name="title_trash">المهملات</string>
+    <string name="title_details">التفاصيل</string>
+    <string name="empty_starred">لا توجد رسائل مميّزة</string>
+    <string name="empty_starred_hint">اضغط مطوّلًا على أي رسالة واختر «إضافة إلى المميّزة» لتبقى هنا.</string>
+    <string name="empty_trash">المهملات فارغة</string>
+    <string name="empty_trash_hint">تبقى المحادثات المحذوفة هنا 30 يومًا قبل حذفها نهائيًا.</string>
+    <string name="label_reply_to">ردًا على</string>
+    <string name="label_starred">مميّزة</string>
+    <string name="label_from">من</string>
+    <string name="label_to">إلى</string>
+    <string name="label_sent">أُرسلت</string>
+    <string name="label_received">استُلمت</string>
+    <string name="label_type">النوع</string>
+    <string name="label_status">الحالة</string>
+    <string name="label_type_sms">رسالة نصية</string>
+    <string name="label_sim">الشريحة</string>
+    <string name="label_sim_default">الشريحة الافتراضية</string>
+    <string name="trash_expires_today">حُذفت اليوم</string>
+    <string name="dialog_delete_messages_title">حذف الرسائل؟</string>
+    <string name="dialog_delete_conversation_title">نقل إلى المهملات؟</string>
+    <string name="dialog_delete_conversation_body">تُنقل المحادثة إلى المهملات وتُحذف تلقائيًا بعد 30 يومًا.</string>
+    <string name="dialog_delete_forever_title">حذف نهائي؟</string>
+    <string name="dialog_delete_forever_body">لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="toast_copied">تم النسخ</string>
+    <string name="toast_code_copied">تم نسخ الرمز</string>
+    <string name="toast_starred">أُضيفت إلى المميّزة</string>
+    <string name="toast_unstarred">أُزيلت من المميّزة</string>
+    <string name="toast_trashed">نُقلت إلى المهملات</string>
+    <string name="toast_deleted">تم الحذف</string>
+    <string name="toast_nothing_to_share">لا يوجد شيء محدد لمشاركته</string>
+    <string name="cd_selected">محدّد</string>
+    <string name="cd_not_selected">غير محدّد</string>
+    <string name="cd_reply_quoted">رسالة مقتبسة</string>
+    <string name="cd_starred">مميّزة</string>
+    <string name="action_close">إغلاق</string>
+    <string name="settings_storage">التخزين</string>
+    <string name="settings_trash_summary">تبقى المحادثات المحذوفة في المهملات 30 يومًا لإمكانية استعادتها، ثم تُحذف تلقائيًا.</string>
+    <string name="filter_unread">غير المقروءة</string>
+
+    <plurals name="selection_count">
+        <item quantity="zero">لم يتم تحديد أي رسالة</item>
+        <item quantity="one">تم تحديد رسالة واحدة</item>
+        <item quantity="two">تم تحديد رسالتين</item>
+        <item quantity="few">تم تحديد %1$d رسائل</item>
+        <item quantity="many">تم تحديد %1$d رسالة</item>
+        <item quantity="other">تم تحديد %1$d رسالة</item>
+    </plurals>
+    <plurals name="trash_days_left">
+        <item quantity="zero">سيُحذف اليوم</item>
+        <item quantity="one">يتبقى يوم واحد</item>
+        <item quantity="two">يتبقى يومان</item>
+        <item quantity="few">يتبقى %1$d أيام</item>
+        <item quantity="many">يتبقى %1$d يومًا</item>
+        <item quantity="other">يتبقى %1$d يومًا</item>
+    </plurals>
+    <plurals name="dialog_delete_messages_body">
+        <item quantity="zero">لن تُحذف أي رسالة.</item>
+        <item quantity="one">سيتم حذف رسالة واحدة نهائيًا، ولا يمكن التراجع عن ذلك.</item>
+        <item quantity="two">سيتم حذف رسالتين نهائيًا، ولا يمكن التراجع عن ذلك.</item>
+        <item quantity="few">سيتم حذف %1$d رسائل نهائيًا، ولا يمكن التراجع عن ذلك.</item>
+        <item quantity="many">سيتم حذف %1$d رسالة نهائيًا، ولا يمكن التراجع عن ذلك.</item>
+        <item quantity="other">سيتم حذف %1$d رسالة نهائيًا، ولا يمكن التراجع عن ذلك.</item>
+    </plurals>
+    <plurals name="settings_import_result">
+        <item quantity="zero">لم يتم استيراد أي رسالة</item>
+        <item quantity="one">تم استيراد رسالة واحدة</item>
+        <item quantity="two">تم استيراد رسالتين</item>
+        <item quantity="few">تم استيراد %1$d رسائل</item>
+        <item quantity="many">تم استيراد %1$d رسالة</item>
+        <item quantity="other">تم استيراد %1$d رسالة</item>
+    </plurals>
 </resources>

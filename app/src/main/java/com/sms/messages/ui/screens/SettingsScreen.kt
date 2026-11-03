@@ -41,6 +41,7 @@ import com.sms.messages.util.DefaultSmsRole
 @Composable
 fun SettingsScreen(
     onOpenBlocked: () -> Unit = {},
+    onOpenTrash: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -179,6 +180,19 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 TextButton(onClick = onOpenBlocked) { Text(stringResource(R.string.action_manage_blocked)) }
+            }
+        }
+
+        item {
+            SettingsCard(title = stringResource(R.string.settings_storage)) {
+                Text(
+                    text = stringResource(R.string.settings_trash_summary),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                TextButton(onClick = onOpenTrash) {
+                    Text(stringResource(R.string.menu_trash))
+                }
             }
         }
 

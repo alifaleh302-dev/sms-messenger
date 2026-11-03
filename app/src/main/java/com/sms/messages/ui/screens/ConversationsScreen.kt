@@ -28,9 +28,15 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -78,12 +84,17 @@ fun ConversationsScreen(
     onOpenSettings: () -> Unit,
     onOpenScheduled: () -> Unit,
     onOpenTemplates: () -> Unit,
+    onOpenStarred: () -> Unit = {},
+    onOpenTrash: () -> Unit = {},
     viewModel: ConversationsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
+    val starredCount by viewModel.starredCount.collectAsStateWithLifecycle()
+    val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     var menuFor by remember { mutableStateOf<ConversationListItem?>(null) }
     var accountMenu by remember { mutableStateOf(false) }
+    var confirmTrash by remember { mutableStateOf<ConversationListItem?>(null) }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -105,13 +116,15 @@ fun ConversationsScreen(
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(state.items, key = { it.id }) { item ->
-                        ConversationRow(
+                        SwipeableConversationRow(
                             item = item,
                             onClick = {
                                 viewModel.markRead(item.id)
                                 onOpenConversation(item.id)
                             },
                             onLongClick = { menuFor = item },
+                            onArchive = { viewModel.archive(item.id) },
+                            onTrash = { viewModel.trash(item.id) },
                         )
                     }
                     // Keeps the last row clear of the compose button.
@@ -123,13 +136,18 @@ fun ConversationsScreen(
         if (accountMenu) {
             AccountMenu(
                 hasArchived = archived.isNotEmpty(),
+                starredCount = starredCount,
+                trashCount = trashCount,
                 onDismiss = { accountMenu = false },
                 onArchived = { accountMenu = false; onOpenArchived() },
+                onStarred = { accountMenu = false; onOpenStarred() },
+                onTrash = { accountMenu = false; onOpenTrash() },
                 onBlocked = { accountMenu = false; onOpenBlocked() },
                 onScheduled = { accountMenu = false; onOpenScheduled() },
                 onTemplates = { accountMenu = false; onOpenTemplates() },
                 onSearchAll = { accountMenu = false; onOpenSearch() },
                 onSettings = { accountMenu = false; onOpenSettings() },
+                onMarkAllRead = { accountMenu = false; viewModel.markAllRead() },
             )
         }
 
@@ -148,10 +166,24 @@ fun ConversationsScreen(
             onDismiss = { menuFor = null },
             onArchive = { viewModel.archive(item.id); menuFor = null },
             onMarkRead = { viewModel.markRead(item.id); menuFor = null },
+            onMarkUnread = { viewModel.markUnread(item.id); menuFor = null },
             onPin = { viewModel.togglePin(item.id, item.pinned); menuFor = null },
             onMute = { viewModel.toggleMute(item.id, item.muted); menuFor = null },
             onBlock = { viewModel.block(item.address); menuFor = null },
-            onDelete = { viewModel.delete(item.id); menuFor = null },
+            onTrash = { confirmTrash = item; menuFor = null },
+        )
+    }
+
+    confirmTrash?.let { item ->
+        ConfirmDialog(
+            title = stringResource(R.string.dialog_delete_conversation_title),
+            body = stringResource(R.string.dialog_delete_conversation_body),
+            confirmLabel = stringResource(R.string.action_trash),
+            onConfirm = {
+                viewModel.trash(item.id)
+                confirmTrash = null
+            },
+            onDismiss = { confirmTrash = null },
         )
     }
 }
@@ -181,13 +213,18 @@ private fun ConversationsTopBar(onOpenAccountMenu: () -> Unit) {
 @Composable
 private fun AccountMenu(
     hasArchived: Boolean,
+    starredCount: Int,
+    trashCount: Int,
     onDismiss: () -> Unit,
     onArchived: () -> Unit,
+    onStarred: () -> Unit,
+    onTrash: () -> Unit,
     onBlocked: () -> Unit,
     onScheduled: () -> Unit,
     onTemplates: () -> Unit,
     onSearchAll: () -> Unit,
     onSettings: () -> Unit,
+    onMarkAllRead: () -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
         DropdownMenu(
@@ -198,6 +235,19 @@ private fun AccountMenu(
             if (hasArchived) {
                 MenuEntry(Icons.Filled.Archive, R.string.menu_archived, onArchived)
             }
+            MenuEntry(
+                icon = Icons.Filled.Star,
+                labelRes = R.string.menu_starred,
+                onClick = onStarred,
+                trailingCount = starredCount,
+            )
+            MenuEntry(
+                icon = Icons.Filled.Delete,
+                labelRes = R.string.menu_trash,
+                onClick = onTrash,
+                trailingCount = trashCount,
+            )
+            MenuEntry(Icons.Filled.DoneAll, R.string.menu_mark_all_read, onMarkAllRead)
             MenuEntry(Icons.Filled.Block, R.string.menu_spam_blocked, onBlocked)
             MenuEntry(Icons.Filled.Schedule, R.string.menu_scheduled, onScheduled)
             MenuEntry(Icons.AutoMirrored.Filled.TextSnippet, R.string.menu_templates, onTemplates)
@@ -207,12 +257,99 @@ private fun AccountMenu(
 }
 
 @Composable
-private fun MenuEntry(icon: ImageVector, labelRes: Int, onClick: () -> Unit) {
+private fun MenuEntry(
+    icon: ImageVector,
+    labelRes: Int,
+    onClick: () -> Unit,
+    trailingCount: Int = 0,
+) {
     DropdownMenuItem(
         text = { Text(stringResource(labelRes)) },
         leadingIcon = { Icon(icon, contentDescription = null) },
+        trailingIcon = if (trailingCount > 0) {
+            { Text(trailingCount.toString(), style = MaterialTheme.typography.labelMedium) }
+        } else {
+            null
+        },
         onClick = onClick,
     )
+}
+
+/**
+ * Wraps a row in Messages' swipe gestures: swiping towards the start archives, swiping
+ * towards the end moves the conversation to trash. The coloured panel behind the row names
+ * the action before it commits.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableConversationRow(
+    item: ConversationListItem,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onArchive: () -> Unit,
+    onTrash: () -> Unit,
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> { onArchive(); false }
+                SwipeToDismissBoxValue.EndToStart -> { onTrash(); false }
+                else -> false
+            }
+        },
+        positionalThreshold = { distance -> distance * 0.35f },
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
+            val target = dismissState.targetValue
+            val (color, icon, labelRes) = when (target) {
+                SwipeToDismissBoxValue.StartToEnd -> Triple(
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    Icons.Filled.Archive,
+                    R.string.action_archive,
+                )
+                SwipeToDismissBoxValue.EndToStart -> Triple(
+                    MaterialTheme.colorScheme.errorContainer,
+                    Icons.Filled.Delete,
+                    R.string.action_trash,
+                )
+                else -> Triple(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    Icons.Filled.Archive,
+                    R.string.action_archive,
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (target == SwipeToDismissBoxValue.EndToStart) {
+                    Arrangement.End
+                } else {
+                    Arrangement.Start
+                },
+            ) {
+                Icon(icon, contentDescription = null)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = stringResource(labelRes),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+        },
+    ) {
+        ConversationRow(
+            item = item,
+            onClick = onClick,
+            onLongClick = onLongClick,
+        )
+    }
 }
 
 /**
@@ -229,6 +366,7 @@ private fun ConversationRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -358,27 +496,32 @@ private fun ConversationContextMenu(
     onDismiss: () -> Unit,
     onArchive: () -> Unit,
     onMarkRead: () -> Unit,
+    onMarkUnread: () -> Unit,
     onPin: () -> Unit,
     onMute: () -> Unit,
     onBlock: () -> Unit,
-    onDelete: () -> Unit,
+    onTrash: () -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
         DropdownMenu(expanded = true, onDismissRequest = onDismiss) {
-            MenuEntry(Icons.Filled.Archive, R.string.action_archive, onArchive)
-            MenuEntry(Icons.Filled.DoneAll, R.string.action_mark_read, onMarkRead)
             MenuEntry(
                 Icons.Filled.PushPin,
                 if (item.pinned) R.string.action_unpin else R.string.action_pin,
                 onPin,
             )
+            MenuEntry(Icons.Filled.Archive, R.string.action_archive, onArchive)
             MenuEntry(
                 Icons.Filled.NotificationsOff,
                 if (item.muted) R.string.action_unmute else R.string.action_mute,
                 onMute,
             )
+            if (item.unread > 0) {
+                MenuEntry(Icons.Filled.DoneAll, R.string.action_mark_read, onMarkRead)
+            } else {
+                MenuEntry(Icons.Filled.MarkEmailUnread, R.string.action_mark_unread, onMarkUnread)
+            }
             MenuEntry(Icons.Filled.Block, R.string.action_block, onBlock)
-            MenuEntry(Icons.Filled.Delete, R.string.action_delete, onDelete)
+            MenuEntry(Icons.Filled.Delete, R.string.action_trash, onTrash)
         }
     }
 }
