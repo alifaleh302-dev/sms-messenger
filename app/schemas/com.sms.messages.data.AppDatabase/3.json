@@ -1,0 +1,622 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "8f70a5a7072c5311482d1a3804e7119d",
+    "entities": [
+      {
+        "tableName": "conversations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `address` TEXT NOT NULL, `displayName` TEXT, `snippet` TEXT NOT NULL, `lastMessageAt` INTEGER NOT NULL, `unreadCount` INTEGER NOT NULL, `archived` INTEGER NOT NULL, `pinned` INTEGER NOT NULL, `muted` INTEGER NOT NULL, `draft` TEXT NOT NULL, `colorIndex` INTEGER NOT NULL, `trashedAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "snippet",
+            "columnName": "snippet",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastMessageAt",
+            "columnName": "lastMessageAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unreadCount",
+            "columnName": "unreadCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "archived",
+            "columnName": "archived",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pinned",
+            "columnName": "pinned",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "muted",
+            "columnName": "muted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "draft",
+            "columnName": "draft",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorIndex",
+            "columnName": "colorIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trashedAt",
+            "columnName": "trashedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_conversations_address",
+            "unique": true,
+            "columnNames": [
+              "address"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_conversations_address` ON `${TABLE_NAME}` (`address`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "messages",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `conversationId` INTEGER NOT NULL, `address` TEXT NOT NULL, `body` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `type` INTEGER NOT NULL, `status` INTEGER NOT NULL, `read` INTEGER NOT NULL, `subscriptionId` INTEGER NOT NULL, `errorCode` INTEGER, `attachmentUri` TEXT, `attachmentMime` TEXT, `attachmentName` TEXT, `externalId` INTEGER, `starred` INTEGER NOT NULL, `replyToId` INTEGER, `otp` INTEGER NOT NULL, FOREIGN KEY(`conversationId`) REFERENCES `conversations`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conversationId",
+            "columnName": "conversationId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "read",
+            "columnName": "read",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subscriptionId",
+            "columnName": "subscriptionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "errorCode",
+            "columnName": "errorCode",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "attachmentUri",
+            "columnName": "attachmentUri",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "attachmentMime",
+            "columnName": "attachmentMime",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "attachmentName",
+            "columnName": "attachmentName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "externalId",
+            "columnName": "externalId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "starred",
+            "columnName": "starred",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "replyToId",
+            "columnName": "replyToId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "otp",
+            "columnName": "otp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_messages_conversationId",
+            "unique": false,
+            "columnNames": [
+              "conversationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_conversationId` ON `${TABLE_NAME}` (`conversationId`)"
+          },
+          {
+            "name": "index_messages_address",
+            "unique": false,
+            "columnNames": [
+              "address"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_address` ON `${TABLE_NAME}` (`address`)"
+          },
+          {
+            "name": "index_messages_timestamp",
+            "unique": false,
+            "columnNames": [
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
+          },
+          {
+            "name": "index_messages_starred",
+            "unique": false,
+            "columnNames": [
+              "starred"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_starred` ON `${TABLE_NAME}` (`starred`)"
+          },
+          {
+            "name": "index_messages_otp",
+            "unique": false,
+            "columnNames": [
+              "otp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_otp` ON `${TABLE_NAME}` (`otp`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "conversations",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "conversationId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "reactions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`messageId` INTEGER NOT NULL, `emoji` TEXT NOT NULL, `count` INTEGER NOT NULL, `mine` INTEGER NOT NULL, PRIMARY KEY(`messageId`, `emoji`), FOREIGN KEY(`messageId`) REFERENCES `messages`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "messageId",
+            "columnName": "messageId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "emoji",
+            "columnName": "emoji",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "count",
+            "columnName": "count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mine",
+            "columnName": "mine",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "messageId",
+            "emoji"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reactions_messageId",
+            "unique": false,
+            "columnNames": [
+              "messageId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reactions_messageId` ON `${TABLE_NAME}` (`messageId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "messages",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "messageId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "templates",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `body` TEXT NOT NULL, `useCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "useCount",
+            "columnName": "useCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "scheduled_messages",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `address` TEXT NOT NULL, `displayName` TEXT, `body` TEXT NOT NULL, `scheduledAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `subscriptionId` INTEGER NOT NULL, `completed` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduledAt",
+            "columnName": "scheduledAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subscriptionId",
+            "columnName": "subscriptionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completed",
+            "columnName": "completed",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_scheduled_messages_scheduledAt",
+            "unique": false,
+            "columnNames": [
+              "scheduledAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_scheduled_messages_scheduledAt` ON `${TABLE_NAME}` (`scheduledAt`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "blocked_numbers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`address` TEXT NOT NULL, `displayName` TEXT, `blockedAt` INTEGER NOT NULL, PRIMARY KEY(`address`))",
+        "fields": [
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "blockedAt",
+            "columnName": "blockedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "address"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "categories",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `iconIndex` INTEGER NOT NULL, `colorIndex` INTEGER NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iconIndex",
+            "columnName": "iconIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorIndex",
+            "columnName": "colorIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_categories_name",
+            "unique": true,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_categories_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "category_members",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`categoryId` INTEGER NOT NULL, `conversationId` INTEGER NOT NULL, PRIMARY KEY(`categoryId`, `conversationId`), FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`conversationId`) REFERENCES `conversations`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "categoryId",
+            "columnName": "categoryId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conversationId",
+            "columnName": "conversationId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "categoryId",
+            "conversationId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_category_members_categoryId",
+            "unique": false,
+            "columnNames": [
+              "categoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_category_members_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          },
+          {
+            "name": "index_category_members_conversationId",
+            "unique": false,
+            "columnNames": [
+              "conversationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_category_members_conversationId` ON `${TABLE_NAME}` (`conversationId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "categories",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoryId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "conversations",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "conversationId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8f70a5a7072c5311482d1a3804e7119d')"
+    ]
+  }
+}

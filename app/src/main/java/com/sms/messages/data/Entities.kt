@@ -40,6 +40,7 @@ data class ConversationEntity(
         Index("address"),
         Index("timestamp"),
         Index("starred"),
+        Index("otp"),
     ]
 )
 data class MessageEntity(
@@ -64,6 +65,12 @@ data class MessageEntity(
      * while the reply stays, and losing the quote must not delete the reply.
      */
     val replyToId: Long? = null,
+    /**
+     * True when this message carried a one-time code. Recorded on arrival so the
+     * auto-delete sweep can find expired codes with an index instead of re-scanning
+     * every body.
+     */
+    val otp: Boolean = false,
 )
 
 /**
@@ -117,4 +124,46 @@ data class BlockedNumberEntity(
     @PrimaryKey val address: String,
     val displayName: String? = null,
     val blockedAt: Long = System.currentTimeMillis(),
+)
+
+/**
+ * A user-created tab. The three built-in tabs (All, Personal, Transactions) are computed
+ * from message content and are not rows here, so only genuinely custom tabs live in this
+ * table and the built-ins can never be renamed or deleted by accident.
+ */
+@Entity(tableName = "categories", indices = [Index(value = ["name"], unique = true)])
+data class CategoryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    /** Index into the icon list offered when editing a tab, so the choice survives renames. */
+    val iconIndex: Int = 0,
+    val colorIndex: Int = 0,
+    /** Sort order in the tab strip; gaps are fine, new tabs go at the end. */
+    val position: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+/** Which conversations the user has filed under a custom tab. */
+@Entity(
+    tableName = "category_members",
+    primaryKeys = ["categoryId", "conversationId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = CategoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["categoryId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = ConversationEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["conversationId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+    ],
+    indices = [Index("categoryId"), Index("conversationId")]
+)
+data class CategoryMemberEntity(
+    val categoryId: Long,
+    val conversationId: Long,
 )

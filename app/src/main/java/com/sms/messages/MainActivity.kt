@@ -39,6 +39,7 @@ import com.sms.messages.ui.screens.BlockedScreen
 import com.sms.messages.ui.screens.ChatScreen
 import com.sms.messages.ui.screens.ComposeMessageScreen
 import com.sms.messages.ui.screens.ConversationsScreen
+import com.sms.messages.ui.screens.LockScreen
 import com.sms.messages.ui.screens.PermissionScreen
 import com.sms.messages.ui.screens.ScheduledScreen
 import com.sms.messages.ui.screens.SearchScreen
@@ -96,8 +97,29 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            // The lock is evaluated before anything is drawn, so a locked app never shows
+            // a conversation even for a frame. Unlocking lasts for the process lifetime.
+            var unlocked by remember { mutableStateOf(!settings.appLockEnabled) }
+            LaunchedEffect(settings.appLockEnabled) {
+                if (!settings.appLockEnabled) unlocked = true
+            }
+
             SmsTheme(themeMode = settings.themeMode) {
-                if (hasSms) {
+                if (settings.appLockEnabled && !unlocked) {
+                    LockScreen(
+                        pinSet = settings.hasPin,
+                        biometricEnabled = settings.biometricUnlock,
+                        onVerifyPin = settingsViewModel::verifyPin,
+                        onUnlock = { unlocked = true },
+                        onDisableLock = {
+                            // The lock cannot be satisfied without a PIN, so leaving it on
+                            // would lock the user out permanently. Turning it off is the only
+                            // way back in; they can set a PIN and re-enable it afterwards.
+                            unlocked = true
+                            settingsViewModel.setAppLock(false)
+                        },
+                    )
+                } else if (hasSms) {
                     MessagesApp(
                         initialConversationId = pendingConversationId.value,
                         initialAddress = pendingAddress.value,

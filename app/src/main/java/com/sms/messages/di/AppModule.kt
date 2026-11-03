@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.sms.messages.data.AppDatabase
 import com.sms.messages.data.ContactResolver
+import com.sms.messages.data.MIGRATION_1_2
+import com.sms.messages.data.MIGRATION_2_3
 import com.sms.messages.data.SettingsRepository
 import com.sms.messages.data.SmsRepository
 import com.sms.messages.sms.SmsSender
@@ -31,7 +33,9 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.NAME)
-            .fallbackToDestructiveMigration()
+            // Never destructive: the app now ships real migrations, and a fallback would
+            // silently erase every stored message the moment a version is added.
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides

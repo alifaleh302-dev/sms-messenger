@@ -56,6 +56,11 @@ data class ChatUiState(
     val replyTo: MessageEntity? = null,
     /** The message whose details dialog is open. */
     val detailsFor: MessageEntity? = null,
+    /**
+     * A message that is being held before it goes to the network. The screen shows the
+     * undo bar while this is set.
+     */
+    val pendingSendId: Long? = null,
 ) {
     val inSelectionMode: Boolean get() = selectedIds.isNotEmpty()
 }
@@ -78,6 +83,7 @@ class ChatViewModel @Inject constructor(
     private val sendFailure = MutableStateFlow(false)
     private val settings = MutableStateFlow(AppSettings())
     private val selectedIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val pendingSend = MutableStateFlow<Long?>(null)
     private val replyToId = MutableStateFlow<Long?>(null)
     private val detailsFor = MutableStateFlow<MessageEntity?>(null)
 
@@ -90,7 +96,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private val localState: Flow<LocalState> = combine(
-        draft, blocked, settings, selectedIds, replyToId, detailsFor,
+        draft, blocked, settings, selectedIds, replyToId, detailsFor, pendingSend,
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         LocalState(
@@ -100,6 +106,7 @@ class ChatViewModel @Inject constructor(
             selectedIds = values[3] as Set<Long>,
             replyToId = values[4] as Long?,
             detailsFor = values[5] as MessageEntity?,
+            pendingSendId = values[6] as Long?,
         )
     }
 
@@ -126,6 +133,7 @@ class ChatViewModel @Inject constructor(
             selectedIds = local.selectedIds,
             replyTo = local.replyToId?.let { target -> messages.firstOrNull { it.id == target } },
             detailsFor = local.detailsFor,
+            pendingSendId = local.pendingSendId,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
 
@@ -142,6 +150,7 @@ class ChatViewModel @Inject constructor(
         val selectedIds: Set<Long>,
         val replyToId: Long?,
         val detailsFor: MessageEntity?,
+        val pendingSendId: Long?,
     )
 
     init {
@@ -184,19 +193,46 @@ class ChatViewModel @Inject constructor(
         replyToId.value = null
         viewModelScope.launch {
             val settingsValue = settings.value
+            val holdMillis = settingsValue.undoSendSeconds * 1000L
             runCatching {
-                repository.sendMessage(
-                    address = address,
-                    body = body,
-                    subscriptionId = settingsValue.defaultSubscriptionId,
-                    deliveryReport = settingsValue.deliveryReports,
-                    replyToId = quoted,
-                )
+                if (holdMillis > 0L) {
+                    val id = repository.sendMessageWithUndo(
+                        address = address,
+                        body = body,
+                        subscriptionId = settingsValue.defaultSubscriptionId,
+                        deliveryReport = settingsValue.deliveryReports,
+                        delayMillis = holdMillis,
+                        replyToId = quoted,
+                    )
+                    // The screen owns the countdown so the bar disappears exactly when the
+                    // hold ends, even if the user leaves and comes back.
+                    pendingSend.value = id
+                } else {
+                    repository.sendMessage(
+                        address = address,
+                        body = body,
+                        subscriptionId = settingsValue.defaultSubscriptionId,
+                        deliveryReport = settingsValue.deliveryReports,
+                        replyToId = quoted,
+                    )
+                }
             }.onFailure {
                 Log.w("ChatViewModel", "Unable to send message", it)
                 sendFailure.value = true
             }
         }
+    }
+
+    /** Takes back the held message. Returns false when the window had already closed. */
+    fun undoPendingSend() {
+        val id = pendingSend.value ?: return
+        pendingSend.value = null
+        viewModelScope.launch { repository.cancelPendingSend(id) }
+    }
+
+    /** Called when the hold elapses on its own, so the bar can be dismissed. */
+    fun clearPendingSend() {
+        pendingSend.value = null
     }
 
     /** Clears the "could not send" prompt after the screen has shown it. */

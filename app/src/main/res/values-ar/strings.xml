@@ -2,6 +2,25 @@
 <resources>
     <string name="app_name">الرسائل</string>
     <string name="tab_archived">المؤرشفة</string>
+    <string name="tab_all">الكل</string>
+    <string name="tab_personal">شخصي</string>
+    <string name="tab_transactions">معاملات</string>
+    <string name="tab_add">تبويب جديد</string>
+    <string name="tab_new_title">تبويب جديد</string>
+    <string name="tab_edit_title">تعديل التبويب</string>
+    <string name="tab_name_hint">اسم التبويب</string>
+    <string name="tab_name_taken">يوجد تبويب بهذا الاسم بالفعل</string>
+    <string name="tab_name_required">أدخل اسم التبويب</string>
+    <string name="tab_delete_title">حذف التبويب؟</string>
+    <string name="tab_delete_body">سيتم حذف التبويب. لن تتأثر محادثاتك.</string>
+    <string name="tab_manage_conversations">المحادثات في هذا التبويب</string>
+    <string name="tab_empty">لا توجد محادثات في هذا التبويب</string>
+    <string name="tab_empty_hint">استخدم «إضافة إلى تبويب» من قائمة المحادثة لوضعها هنا.</string>
+    <string name="tab_icon">اللون</string>
+    <string name="action_add_to_tab">إضافة إلى تبويب</string>
+    <string name="action_delete_tab">حذف التبويب</string>
+    <string name="toast_added_to_tab">أُضيفت إلى التبويب</string>
+    <string name="toast_removed_from_tab">أُزيلت من التبويب</string>
     <string name="tab_scheduled">المجدولة</string>
 
     <string name="action_search">بحث</string>
@@ -71,6 +90,20 @@
     <string name="settings_auto_retry">إعادة إرسال الرسائل الفاشلة تلقائياً</string>
     <string name="settings_signature">التوقيع</string>
     <string name="settings_signature_hint">يُضاف إلى نهاية كل رسالة صادرة</string>
+    <string name="settings_undo_send">التراجع عن الإرسال</string>
+    <string name="settings_undo_send_summary">إبقاء الرسالة بضع ثوانٍ قبل إرسالها</string>
+    <string name="settings_undo_send_off">إيقاف</string>
+    <string name="settings_privacy">الخصوصية</string>
+    <string name="settings_auto_delete_otp">حذف رموز التحقق بعد ٢٤ ساعة</string>
+    <string name="settings_auto_delete_otp_summary">يحذف الرموز لمرة واحدة تلقائيًا حتى لا تتراكم</string>
+    <string name="settings_app_lock">قفل التطبيق</string>
+    <string name="settings_app_lock_summary">اطلب بصمة الإصبع أو رمزًا سريًا لفتح التطبيق</string>
+    <string name="settings_biometric_unlock">الفتح ببصمة الإصبع</string>
+    <string name="settings_change_pin">تغيير الرمز السري</string>
+    <string name="settings_set_pin">تعيين رمز سري</string>
+    <string name="settings_pin_hint">من ٤ إلى ٦ أرقام</string>
+    <string name="settings_pin_required">عيّن رمزًا سريًا قبل تشغيل القفل</string>
+    <string name="settings_pin_invalid">أدخل من ٤ إلى ٦ أرقام</string>
     <string name="settings_about">حول</string>
     <string name="settings_version">الإصدار</string>
 
@@ -81,6 +114,7 @@
     <string name="notification_new_message">رسالة جديدة</string>
     <string name="notification_reply">رد</string>
     <string name="notification_mark_read">تحديد كمقروء</string>
+    <string name="notification_copy_code">نسخ الرمز</string>
 
     <string name="permission_title">الأذونات مطلوبة</string>
     <string name="permission_body">لإرسال وقراءة الرسائل النصية، يحتاج التطبيق إلى أذونات الرسائل. امنحها للمتابعة.</string>
@@ -220,6 +254,38 @@
         <item quantity="many">سيتم حذف %1$d رسالة نهائيًا، ولا يمكن التراجع عن ذلك.</item>
         <item quantity="other">سيتم حذف %1$d رسالة نهائيًا، ولا يمكن التراجع عن ذلك.</item>
     </plurals>
+    <!-- Undo send -->
+    <string name="undo_send_message">تم إرسال الرسالة</string>
+    <string name="action_undo">تراجع</string>
+    <string name="toast_send_cancelled">أُلغي الإرسال</string>
+
+    <!-- App lock -->
+    <string name="lock_title">مقفل</string>
+    <string name="lock_subtitle">افتح القفل لعرض رسائلك</string>
+    <string name="lock_use_fingerprint">الفتح ببصمة الإصبع</string>
+    <string name="lock_enter_pin">أدخل الرمز السري</string>
+    <string name="lock_unlock">فتح</string>
+    <string name="lock_wrong_pin">رمز خاطئ</string>
+    <string name="lock_turn_off">إيقاف قفل التطبيق</string>
+
+    <plurals name="settings_undo_send_seconds">
+        <item quantity="zero">إيقاف</item>
+        <item quantity="one">ثانية واحدة</item>
+        <item quantity="two">ثانيتان</item>
+        <item quantity="few">%1$d ثوانٍ</item>
+        <item quantity="many">%1$d ثانية</item>
+        <item quantity="other">%1$d ثانية</item>
+    </plurals>
+
+    <plurals name="otp_deleted_result">
+        <item quantity="zero">لم يُحذف أي رمز</item>
+        <item quantity="one">تم حذف رمز منتهي واحد</item>
+        <item quantity="two">تم حذف رمزين منتهيين</item>
+        <item quantity="few">تم حذف %1$d رموز منتهية</item>
+        <item quantity="many">تم حذف %1$d رمزًا منتهيًا</item>
+        <item quantity="other">تم حذف %1$d رمز منتهي</item>
+    </plurals>
+
     <plurals name="settings_import_result">
         <item quantity="zero">لم يتم استيراد أي رسالة</item>
         <item quantity="one">تم استيراد رسالة واحدة</item>

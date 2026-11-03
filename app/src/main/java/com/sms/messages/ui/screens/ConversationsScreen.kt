@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Block
@@ -41,10 +42,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,11 +65,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.R
+import com.sms.messages.ui.components.AddToTabSheet
 import com.sms.messages.ui.components.AvatarChip
+import com.sms.messages.ui.components.ConversationTabs
+import com.sms.messages.ui.components.DeleteTabDialog
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.components.InitialAvatar
 import com.sms.messages.ui.components.SearchPill
+import com.sms.messages.ui.components.TabEditorDialog
 import com.sms.messages.ui.viewmodel.ConversationListItem
+import com.sms.messages.ui.viewmodel.TabItem
 import com.sms.messages.ui.viewmodel.ConversationsViewModel
 import com.sms.messages.util.TimeFormat
 
@@ -95,6 +104,21 @@ fun ConversationsScreen(
     var menuFor by remember { mutableStateOf<ConversationListItem?>(null) }
     var accountMenu by remember { mutableStateOf(false) }
     var confirmTrash by remember { mutableStateOf<ConversationListItem?>(null) }
+    // null = closed, TabItem with no category = creating, TabItem with one = editing.
+    var tabEditor by remember { mutableStateOf<TabItem?>(null) }
+    var creatingTab by remember { mutableStateOf(false) }
+    var tabToDelete by remember { mutableStateOf<TabItem?>(null) }
+    var addToTabFor by remember { mutableStateOf<ConversationListItem?>(null) }
+    val customTabs = remember(state.tabs) { state.tabs.filter { it.isCustom } }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val tabMessage = state.message
+
+    LaunchedEffect(tabMessage) {
+        if (tabMessage != null) {
+            snackbarHostState.showSnackbar(tabMessage)
+            viewModel.clearMessage()
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -105,13 +129,30 @@ fun ConversationsScreen(
                 placeholder = stringResource(R.string.search_conversations),
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
+            Spacer(Modifier.height(8.dp))
+            ConversationTabs(
+                tabs = state.tabs,
+                selectedKey = state.selectedTabKey,
+                onSelect = viewModel::selectTab,
+                onCreate = { creatingTab = true },
+                onEdit = { tabEditor = it },
+            )
             Spacer(Modifier.height(4.dp))
 
             if (state.items.isEmpty() && !state.loading) {
+                val inCustomTab = state.selectedTabKey.startsWith("category:")
                 EmptyState(
                     icon = Icons.Filled.ChatBubbleOutline,
-                    title = stringResource(R.string.empty_conversations),
-                    hint = stringResource(R.string.empty_conversations_hint),
+                    title = if (inCustomTab) {
+                        stringResource(R.string.tab_empty)
+                    } else {
+                        stringResource(R.string.empty_conversations)
+                    },
+                    hint = if (inCustomTab) {
+                        stringResource(R.string.tab_empty_hint)
+                    } else {
+                        stringResource(R.string.empty_conversations_hint)
+                    },
                 )
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
@@ -158,6 +199,14 @@ fun ConversationsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
         )
+
+        // Sits above the compose button so the two never overlap.
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 88.dp),
+        )
     }
 
     menuFor?.let { item ->
@@ -169,6 +218,7 @@ fun ConversationsScreen(
             onMarkUnread = { viewModel.markUnread(item.id); menuFor = null },
             onPin = { viewModel.togglePin(item.id, item.pinned); menuFor = null },
             onMute = { viewModel.toggleMute(item.id, item.muted); menuFor = null },
+            onAddToTab = { addToTabFor = item; menuFor = null },
             onBlock = { viewModel.block(item.address); menuFor = null },
             onTrash = { confirmTrash = item; menuFor = null },
         )
@@ -186,6 +236,70 @@ fun ConversationsScreen(
             onDismiss = { confirmTrash = null },
         )
     }
+
+    if (creatingTab || tabEditor != null) {
+        val editing = tabEditor
+        TabEditorDialog(
+            existing = editing,
+            conversations = state.items,
+            onDismiss = { creatingTab = false; tabEditor = null },
+            onSave = { name, iconIndex, colorIndex ->
+                val id = editing?.categoryId
+                if (id == null) {
+                    viewModel.createCategory(name, iconIndex, colorIndex)
+                } else {
+                    viewModel.renameCategory(id, name, iconIndex, colorIndex)
+                }
+                creatingTab = false
+                tabEditor = null
+            },
+            onDelete = editing?.categoryId?.let { id ->
+                { tabToDelete = editing; tabEditor = null }
+            },
+            onToggleMembership = { conversationId, currentlyIn ->
+                val id = editing?.categoryId ?: return@TabEditorDialog
+                if (currentlyIn) {
+                    viewModel.removeFromCategory(id, conversationId)
+                } else {
+                    viewModel.addToCategory(id, conversationId)
+                }
+            },
+        )
+    }
+
+    tabToDelete?.let { tab ->
+        DeleteTabDialog(
+            onConfirm = {
+                tab.categoryId?.let { viewModel.deleteCategory(it) }
+                tabToDelete = null
+            },
+            onDismiss = { tabToDelete = null },
+        )
+    }
+
+    addToTabFor?.let { item ->
+        AddToTabSheet(
+            tabs = customTabs,
+            categoryIds = item.categoryIds,
+            onToggle = { categoryId, currentlyIn ->
+                if (currentlyIn) {
+                    viewModel.removeFromCategory(categoryId, item.id)
+                } else {
+                    viewModel.addToCategory(categoryId, item.id)
+                }
+                addToTabFor = item.copy(
+                    categoryIds = if (currentlyIn) {
+                        item.categoryIds - categoryId
+                    } else {
+                        item.categoryIds + categoryId
+                    }
+                )
+            },
+            onCreate = { addToTabFor = null; creatingTab = true },
+            onDismiss = { addToTabFor = null },
+        )
+    }
+
 }
 
 @Composable
@@ -499,6 +613,7 @@ private fun ConversationContextMenu(
     onMarkUnread: () -> Unit,
     onPin: () -> Unit,
     onMute: () -> Unit,
+    onAddToTab: () -> Unit,
     onBlock: () -> Unit,
     onTrash: () -> Unit,
 ) {
@@ -520,6 +635,7 @@ private fun ConversationContextMenu(
             } else {
                 MenuEntry(Icons.Filled.MarkEmailUnread, R.string.action_mark_unread, onMarkUnread)
             }
+            MenuEntry(Icons.AutoMirrored.Filled.Label, R.string.action_add_to_tab, onAddToTab)
             MenuEntry(Icons.Filled.Block, R.string.action_block, onBlock)
             MenuEntry(Icons.Filled.Delete, R.string.action_trash, onTrash)
         }

@@ -21,8 +21,8 @@ android {
         applicationId = "com.sms.messages"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.2.0"
+        versionCode = 6
+        versionName = "1.3.0"
         vectorDrawables.useSupportLibrary = true
     }
 
@@ -123,6 +123,7 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.androidx.biometric)
 
     testImplementation(libs.junit)
     // Robolectric runs the real framework, so Room, SQLite, PhoneNumberUtils and the

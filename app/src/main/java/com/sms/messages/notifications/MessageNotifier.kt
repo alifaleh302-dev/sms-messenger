@@ -15,6 +15,7 @@ import com.sms.messages.MainActivity
 import com.sms.messages.R
 import com.sms.messages.sms.NotificationActionReceiver
 import com.sms.messages.util.PhoneNumbers
+import com.sms.messages.util.VerificationCode
 import com.sms.messages.data.SettingsRepository
 import com.sms.messages.data.SmsRepository
 import com.sms.messages.di.ApplicationScope
@@ -51,6 +52,9 @@ class MessageNotifier @Inject constructor(
                 vibrate = settings.vibrate && !muted,
                 sound = settings.soundEnabled && !muted,
                 silent = muted,
+                // Detected here as well as on arrival so the copy action is available for
+                // messages that reached the database through the telephony import.
+                code = VerificationCode.extract(body),
             )
         }
     }
@@ -63,6 +67,7 @@ class MessageNotifier @Inject constructor(
         vibrate: Boolean,
         sound: Boolean,
         silent: Boolean = false,
+        code: String? = null,
     ) {
         if (ContextCompat.checkSelfPermission(
                 context,
@@ -101,6 +106,23 @@ class MessageNotifier @Inject constructor(
             R.drawable.ic_done_all, context.getString(R.string.notification_mark_read), readPending
         ).build()
 
+        // Only offered when a code was actually found, so the action never appears on an
+        // ordinary message where it would have nothing to copy.
+        val copyCodeAction: NotificationCompat.Action? = code?.let { value ->
+            val copyIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+                action = NotificationActionReceiver.ACTION_COPY_CODE
+                putExtra(NotificationActionReceiver.EXTRA_CONVERSATION_ID, conversationId)
+                putExtra(NotificationActionReceiver.EXTRA_CODE, value)
+            }
+            val copyPending = PendingIntent.getBroadcast(
+                context, (conversationId + 2).toInt(), copyIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            NotificationCompat.Action.Builder(
+                R.drawable.ic_copy, context.getString(R.string.notification_copy_code), copyPending
+            ).build()
+        }
+
         val person = Person.Builder().setName(title).setImportant(true).build()
 
         val builder = NotificationCompat.Builder(context, Notifications.CHANNEL_MESSAGES)
@@ -121,6 +143,10 @@ class MessageNotifier @Inject constructor(
             .addAction(replyAction)
             .addAction(readAction)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+
+        // The copy action leads when a code is present: it is the reason the user is
+        // looking at the notification at all.
+        copyCodeAction?.let { builder.addAction(it) }
 
         if (vibrate) builder.setVibrate(longArrayOf(0, 250, 150, 250))
         if (!sound || silent) builder.setSilent(true)

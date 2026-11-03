@@ -6,9 +6,20 @@ import com.sms.messages.R
 import com.sms.messages.sms.SmsSender
 import com.sms.messages.util.PhoneNumbers
 import com.sms.messages.util.SearchQuery
+import com.sms.messages.util.SmartCategories
+import com.sms.messages.util.SmartTab
+import com.sms.messages.util.VerificationCode
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Single entry point for everything the UI and the SMS plumbing need. Keeping the
@@ -18,7 +29,17 @@ import kotlinx.coroutines.flow.map
 class SmsRepository(
     private val context: Context,
     private val database: AppDatabase,
+    /**
+     * Drives the undo-send hold. Injected so tests can run it on a controlled dispatcher
+     * instead of a real four-second wall-clock wait.
+     */
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
+
+    /** A message waiting out its undo window, with the thread it belongs to. */
+    private data class PendingSend(val job: Job, val conversationId: Long)
+
+    private val pendingSends = ConcurrentHashMap<Long, PendingSend>()
 
     private val conversations = database.conversations()
     private val messages = database.messages()
@@ -26,6 +47,7 @@ class SmsRepository(
     private val templates = database.templates()
     private val scheduled = database.scheduled()
     private val blocked = database.blocked()
+    private val categories = database.categories()
     private val sender = SmsSender(context)
     private val contacts = ContactResolver(context)
 
@@ -262,6 +284,8 @@ class SmsRepository(
                 read = false,
                 subscriptionId = subscriptionId,
                 externalId = externalId,
+                // Recorded now so the auto-delete sweep never has to re-read every body.
+                otp = VerificationCode.extract(body) != null,
             )
         )
         conversations.touch(conversation.id, body, timestamp)
@@ -303,6 +327,83 @@ class SmsRepository(
         dispatch(id, deliveryReport)
         return id
     }
+
+    /**
+     * Queues an outgoing message and holds it for [delayMillis] before it reaches the
+     * network, so the user can take it back. The message is stored immediately, which is
+     * what lets the bubble appear at once; only the hand-off to the platform waits.
+     *
+     * Returns the message id, or -1 when the hold could not be started (already cancelled,
+     * or a delay of zero, in which case [sendMessage] should be used instead).
+     */
+    suspend fun sendMessageWithUndo(
+        address: String,
+        body: String,
+        subscriptionId: Int,
+        deliveryReport: Boolean,
+        delayMillis: Long,
+        replyToId: Long? = null,
+    ): Long {
+        if (!PhoneNumbers.isValid(address)) {
+            throw IllegalArgumentException(context.getString(R.string.error_invalid_number))
+        }
+        val normalized = PhoneNumbers.normalize(address).ifEmpty { address }
+        val conversation = ensureConversation(normalized)
+        val now = System.currentTimeMillis()
+        val id = messages.insert(
+            MessageEntity(
+                conversationId = conversation.id,
+                address = normalized,
+                body = body,
+                timestamp = now,
+                type = MessageType.OUTBOX,
+                status = MessageStatus.PENDING,
+                read = true,
+                subscriptionId = subscriptionId,
+                replyToId = replyToId,
+            )
+        )
+        conversations.touch(conversation.id, body, now)
+        conversations.setDraft(conversation.id, "")
+
+        if (delayMillis <= 0L) {
+            dispatch(id, deliveryReport)
+            return id
+        }
+
+        val job = scope.launch {
+            try {
+                delay(delayMillis)
+                // cancelPendingSend removes the entry before cancelling, so a message that
+                // is no longer in the map must not be handed to the platform.
+                if (pendingSends.remove(id) == null) return@launch
+                dispatch(id, deliveryReport)
+            } catch (t: CancellationException) {
+                throw t
+            } catch (t: Throwable) {
+                Log.w(TAG, "Held send failed for message $id", t)
+                messages.updateStatus(id, MessageStatus.FAILED, null)
+            }
+        }
+        pendingSends[id] = PendingSend(job, conversation.id)
+        return id
+    }
+
+    /**
+     * Cancels a held message and removes it, so it never appears in the thread at all.
+     * Returns false when the hold already elapsed and the message went out.
+     */
+    suspend fun cancelPendingSend(messageId: Long): Boolean {
+        val pending = pendingSends.remove(messageId) ?: return false
+        pending.job.cancel()
+        messages.deleteById(messageId)
+        // Rebuilds the snippet, and drops the thread entirely if that was its only message.
+        refreshConversationSummary(pending.conversationId)
+        return true
+    }
+
+    /** True while a message is still being held and can still be taken back. */
+    fun isPendingSend(messageId: Long): Boolean = pendingSends.containsKey(messageId)
 
     /** Re-sends a previously failed message. */
     suspend fun retryMessage(id: Long, deliveryReport: Boolean): Boolean {
@@ -432,6 +533,98 @@ class SmsRepository(
     suspend fun isBlocked(address: String): Boolean =
         blocked.isBlocked(PhoneNumbers.normalize(address).ifEmpty { address })
 
+    // ---------------------------------------------------------------- categories
+
+    fun observeCategories(): Flow<List<CategoryEntity>> = categories.observeAll()
+
+    /** Every (tab, conversation) pair, so rows can show which tabs they belong to. */
+    fun observeCategoryMembers(): Flow<List<CategoryMemberEntity>> = categories.observeAllMembers()
+
+    fun observeCategoryMemberIds(categoryId: Long): Flow<List<Long>> =
+        categories.observeMemberIds(categoryId)
+
+    /** Creates a tab. Returns null when the name is blank or already taken. */
+    suspend fun createCategory(name: String, iconIndex: Int = 0, colorIndex: Int = 0): Long? {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return null
+        if (categories.getByName(trimmed) != null) return null
+        return categories.insert(
+            CategoryEntity(
+                name = trimmed,
+                iconIndex = iconIndex,
+                colorIndex = colorIndex,
+                position = categories.nextPosition(),
+            )
+        )
+    }
+
+    /** Renames and restyles a tab. Returns false when the new name is taken by another tab. */
+    suspend fun updateCategory(id: Long, name: String, iconIndex: Int, colorIndex: Int): Boolean {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return false
+        val clash = categories.getByName(trimmed)
+        if (clash != null && clash.id != id) return false
+        categories.update(id, trimmed, iconIndex, colorIndex)
+        return true
+    }
+
+    suspend fun deleteCategory(id: Long) = categories.deleteById(id)
+
+    suspend fun isInCategory(categoryId: Long, conversationId: Long): Boolean =
+        categories.findMember(categoryId, conversationId) != null
+
+    suspend fun addToCategory(categoryId: Long, conversationId: Long) =
+        categories.addMember(CategoryMemberEntity(categoryId, conversationId))
+
+    suspend fun removeFromCategory(categoryId: Long, conversationId: Long) =
+        categories.removeMember(categoryId, conversationId)
+
+    /** Adds or removes a conversation from a tab, for the toggle in the tab editor. */
+    suspend fun toggleCategoryMembership(categoryId: Long, conversationId: Long): Boolean {
+        return if (isInCategory(categoryId, conversationId)) {
+            categories.removeMember(categoryId, conversationId)
+            false
+        } else {
+            categories.addMember(CategoryMemberEntity(categoryId, conversationId))
+            true
+        }
+    }
+
+    /**
+     * Classifies one conversation into the built-in tabs. Reading the bodies here keeps the
+     * rule in one place instead of duplicating it in the view model.
+     */
+    suspend fun smartTabFor(conversation: ConversationEntity): SmartTab =
+        SmartCategories.classify(
+            address = conversation.address,
+            bodies = messages.bodiesForConversation(conversation.id),
+        )
+
+    // ---------------------------------------------------------------- one-time codes
+
+    /** Marks a message as carrying a code, used when a code is found after the fact. */
+    suspend fun markOtp(messageId: Long, otp: Boolean) = messages.setOtp(messageId, otp)
+
+    /** How many one-time-code messages are older than the retention window. */
+    fun observeExpiredOtpCount(retentionMillis: Long = OTP_RETENTION_MILLIS): Flow<Int> =
+        messages.observeExpiredOtpCount(System.currentTimeMillis() - retentionMillis)
+
+    /**
+     * Deletes one-time-code messages older than [retentionMillis]. Returns how many went,
+     * so the caller can tell the user what happened. Conversations that end up empty are
+     * removed with their last message, matching how a manual delete behaves.
+     */
+    suspend fun purgeExpiredOtp(retentionMillis: Long = OTP_RETENTION_MILLIS): Int {
+        val cutoff = System.currentTimeMillis() - retentionMillis
+        val expired = messages.getExpiredOtp(cutoff)
+        if (expired.isEmpty()) return 0
+        val affected = expired.map { it.conversationId }.toSet()
+        messages.deleteByIds(expired.map { it.id })
+        affected.forEach { refreshConversationSummary(it) }
+        Log.i(TAG, "Auto-deleted ${expired.size} expired one-time codes")
+        return expired.size
+    }
+
     // ---------------------------------------------------------------- contacts
 
     suspend fun contactName(address: String): String? = contacts.displayName(address)
@@ -478,6 +671,9 @@ class SmsRepository(
 
         /** How long a trashed conversation stays recoverable, matching Messages' 30 days. */
         const val TRASH_RETENTION_MILLIS = 30L * 24L * 60L * 60L * 1000L
+
+        /** One-time codes are deleted this long after they arrive, when that option is on. */
+        const val OTP_RETENTION_MILLIS = 24L * 60L * 60L * 1000L
         const val MAX_AUTO_RETRIES = 5
     }
 }

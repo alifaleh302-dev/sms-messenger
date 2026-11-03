@@ -5,6 +5,25 @@
     <!-- Tabs -->
     <string name="tab_archived">Archived</string>
     <string name="tab_scheduled">Scheduled</string>
+    <string name="tab_all">All</string>
+    <string name="tab_personal">Personal</string>
+    <string name="tab_transactions">Transactions</string>
+    <string name="tab_add">New tab</string>
+    <string name="tab_new_title">New tab</string>
+    <string name="tab_edit_title">Edit tab</string>
+    <string name="tab_name_hint">Tab name</string>
+    <string name="tab_name_taken">A tab with that name already exists</string>
+    <string name="tab_name_required">Enter a tab name</string>
+    <string name="tab_delete_title">Delete tab?</string>
+    <string name="tab_delete_body">The tab will be removed. Your conversations are not affected.</string>
+    <string name="tab_manage_conversations">Conversations in this tab</string>
+    <string name="tab_empty">No conversations in this tab</string>
+    <string name="tab_empty_hint">Use "Add to tab" on a conversation to file it here.</string>
+    <string name="tab_icon">Icon</string>
+    <string name="action_add_to_tab">Add to tab</string>
+    <string name="action_delete_tab">Delete tab</string>
+    <string name="toast_added_to_tab">Added to tab</string>
+    <string name="toast_removed_from_tab">Removed from tab</string>
 
     <!-- Common -->
     <string name="action_search">Search</string>
@@ -81,6 +100,20 @@
     <string name="settings_auto_retry">Auto retry failed messages</string>
     <string name="settings_signature">Signature</string>
     <string name="settings_signature_hint">Appended to every outgoing message</string>
+    <string name="settings_undo_send">Undo send</string>
+    <string name="settings_undo_send_summary">Hold a message for a few seconds before it is sent</string>
+    <string name="settings_undo_send_off">Off</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_auto_delete_otp">Delete verification codes after 24 hours</string>
+    <string name="settings_auto_delete_otp_summary">Removes one-time codes automatically so they do not pile up</string>
+    <string name="settings_app_lock">App lock</string>
+    <string name="settings_app_lock_summary">Require a fingerprint or PIN to open the app</string>
+    <string name="settings_biometric_unlock">Unlock with fingerprint</string>
+    <string name="settings_change_pin">Change PIN</string>
+    <string name="settings_set_pin">Set a PIN</string>
+    <string name="settings_pin_hint">4 to 6 digits</string>
+    <string name="settings_pin_required">Set a PIN before turning on the lock</string>
+    <string name="settings_pin_invalid">Enter 4 to 6 digits</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
 
@@ -92,12 +125,27 @@
     <string name="notification_new_message">New message</string>
     <string name="notification_reply">Reply</string>
     <string name="notification_mark_read">Mark as read</string>
+    <string name="notification_copy_code">Copy code</string>
 
     <!-- Permissions -->
     <string name="permission_title">Permissions required</string>
     <string name="permission_body">To send and read text messages, this app needs SMS permissions. Grant them to continue.</string>
     <string name="permission_grant">Grant permissions</string>
     <string name="permission_sms_denied">SMS permission is required to read and send messages</string>
+
+    <!-- Undo send -->
+    <string name="undo_send_message">Message sent</string>
+    <string name="action_undo">Undo</string>
+    <string name="toast_send_cancelled">Send cancelled</string>
+
+    <!-- App lock -->
+    <string name="lock_title">Locked</string>
+    <string name="lock_subtitle">Unlock to see your messages</string>
+    <string name="lock_use_fingerprint">Unlock with fingerprint</string>
+    <string name="lock_enter_pin">Enter your PIN</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_wrong_pin">Wrong PIN</string>
+    <string name="lock_turn_off">Turn off app lock</string>
 
     <!-- Errors -->
     <string name="error_generic">Something went wrong</string>
@@ -222,6 +270,16 @@
         <item quantity="one">This permanently deletes %1$d message and cannot be undone.</item>
         <item quantity="other">This permanently deletes %1$d messages and cannot be undone.</item>
     </plurals>
+    <plurals name="settings_undo_send_seconds">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+
+    <plurals name="otp_deleted_result">
+        <item quantity="one">Deleted %1$d expired code</item>
+        <item quantity="other">Deleted %1$d expired codes</item>
+    </plurals>
+
     <plurals name="settings_import_result">
         <item quantity="one">Imported %1$d message</item>
         <item quantity="other">Imported %1$d messages</item>

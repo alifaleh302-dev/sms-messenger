@@ -36,8 +36,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import kotlinx.coroutines.delay
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -102,12 +105,43 @@ fun ChatScreen(
     val deletedText = stringResource(R.string.toast_deleted)
     val trashedText = stringResource(R.string.toast_trashed)
     val nothingToShareText = stringResource(R.string.toast_nothing_to_share)
+    val undoMessageText = stringResource(R.string.undo_send_message)
+    val undoLabel = stringResource(R.string.action_undo)
+    val sendCancelledText = stringResource(R.string.toast_send_cancelled)
 
     LaunchedEffect(sendFailed) {
         if (sendFailed) {
             snackbarHostState.showSnackbar(sendFailedText)
             viewModel.clearSendFailure()
         }
+    }
+
+    // The undo bar runs its own countdown so it disappears exactly when the hold ends,
+    // rather than sitting there after the message has already gone out.
+    val pendingSendId = state.pendingSendId
+    val undoSeconds = state.settings.undoSendSeconds
+    LaunchedEffect(pendingSendId, undoSeconds) {
+        if (pendingSendId == null) return@LaunchedEffect
+        // Indefinite: the bar is dismissed by the countdown below, not by a fixed timer,
+        // so it stays up for exactly as long as the message is still recallable.
+        val result = snackbarHostState.showSnackbar(
+            message = undoMessageText,
+            actionLabel = undoLabel,
+            duration = SnackbarDuration.Indefinite,
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            viewModel.undoPendingSend()
+            snackbarHostState.showSnackbar(sendCancelledText)
+        } else {
+            viewModel.clearPendingSend()
+        }
+    }
+    // Dismisses the bar when the hold expires, so the countdown drives the UI, not a timer
+    // that could drift away from the actual send.
+    LaunchedEffect(pendingSendId) {
+        if (pendingSendId == null) return@LaunchedEffect
+        delay(undoSeconds * 1000L)
+        snackbarHostState.currentSnackbarData?.dismiss()
     }
 
     LaunchedEffect(state.messages.size) {

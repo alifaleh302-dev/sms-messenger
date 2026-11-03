@@ -148,4 +148,20 @@ interface MessageDao {
 
     @Query("SELECT COUNT(*) FROM messages WHERE conversationId = :conversationId AND read = 0")
     suspend fun countUnread(conversationId: Long): Int
+
+    // ------------------------------------------------------------ one-time codes
+
+    @Query("UPDATE messages SET otp = :otp WHERE id = :id")
+    suspend fun setOtp(id: Long, otp: Boolean)
+
+    /** Expired one-time codes, oldest first, so the sweep can delete them in batches. */
+    @Query("SELECT * FROM messages WHERE otp = 1 AND timestamp <= :cutoff ORDER BY timestamp ASC")
+    suspend fun getExpiredOtp(cutoff: Long): List<MessageEntity>
+
+    @Query("SELECT COUNT(*) FROM messages WHERE otp = 1 AND timestamp <= :cutoff")
+    fun observeExpiredOtpCount(cutoff: Long): Flow<Int>
+
+    /** The bodies of every message in a conversation, oldest first, for tab classification. */
+    @Query("SELECT body FROM messages WHERE conversationId = :conversationId ORDER BY timestamp ASC")
+    suspend fun bodiesForConversation(conversationId: Long): List<String>
 }

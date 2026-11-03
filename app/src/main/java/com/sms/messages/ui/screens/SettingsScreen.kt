@@ -27,16 +27,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.BuildConfig
 import com.sms.messages.R
+import androidx.compose.material3.FilterChip
 import com.sms.messages.data.AppLanguage
+import com.sms.messages.data.MAX_UNDO_SEND_SECONDS
+import com.sms.messages.data.MIN_UNDO_SEND_SECONDS
 import com.sms.messages.data.ThemeMode
 import com.sms.messages.ui.viewmodel.SettingsViewModel
 import com.sms.messages.util.DefaultSmsRole
+
+private const val MIN_PIN = 4
+private const val MAX_PIN = 6
 
 @Composable
 fun SettingsScreen(
@@ -150,6 +157,20 @@ fun SettingsScreen(
                     checked = settings.autoRetry,
                     onChange = viewModel::setAutoRetry,
                 )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.settings_undo_send),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = stringResource(R.string.settings_undo_send_summary),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                UndoDelayPicker(
+                    seconds = settings.undoSendSeconds,
+                    onSelect = viewModel::setUndoSendSeconds,
+                )
             }
         }
 
@@ -169,6 +190,43 @@ fun SettingsScreen(
                 TextButton(onClick = { viewModel.setSignature(signature) }) {
                     Text(stringResource(R.string.action_save))
                 }
+            }
+        }
+
+        item {
+            SettingsCard(title = stringResource(R.string.settings_privacy)) {
+                ToggleRow(
+                    label = stringResource(R.string.settings_auto_delete_otp),
+                    checked = settings.autoDeleteOtp,
+                    onChange = viewModel::setAutoDeleteOtp,
+                )
+                Text(
+                    text = stringResource(R.string.settings_auto_delete_otp_summary),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                ToggleRow(
+                    label = stringResource(R.string.settings_app_lock),
+                    checked = settings.appLockEnabled,
+                    onChange = viewModel::setAppLock,
+                )
+                Text(
+                    text = stringResource(R.string.settings_app_lock_summary),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (settings.appLockEnabled) {
+                    ToggleRow(
+                        label = stringResource(R.string.settings_biometric_unlock),
+                        checked = settings.biometricUnlock,
+                        onChange = viewModel::setBiometricUnlock,
+                    )
+                }
+                PinEditor(
+                    hasPin = settings.hasPin,
+                    onSave = viewModel::setPin,
+                )
             }
         }
 
@@ -275,5 +333,66 @@ private fun ChoiceRow(label: String, selected: Boolean, onSelect: () -> Unit) {
     ) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         androidx.compose.material3.RadioButton(selected = selected, onClick = onSelect)
+    }
+}
+
+/** The three-to-five-second undo window, shown as a small row of choices. */
+@Composable
+private fun UndoDelayPicker(seconds: Int, onSelect: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.padding(top = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FilterChip(
+            selected = seconds == 0,
+            label = { Text(stringResource(R.string.settings_undo_send_off)) },
+            onClick = { onSelect(0) },
+        )
+        (MIN_UNDO_SEND_SECONDS..MAX_UNDO_SEND_SECONDS).forEach { value ->
+            FilterChip(
+                selected = seconds == value,
+                label = {
+                    Text(pluralStringResource(R.plurals.settings_undo_send_seconds, value, value))
+                },
+                onClick = { onSelect(value) },
+            )
+        }
+    }
+}
+
+/** Sets or replaces the lock PIN. The field is cleared after a successful save. */
+@Composable
+private fun PinEditor(hasPin: Boolean, onSave: (String) -> Unit) {
+    var pin by remember { mutableStateOf("") }
+    Spacer(Modifier.height(8.dp))
+    OutlinedTextField(
+        value = pin,
+        onValueChange = { value ->
+            if (value.length <= MAX_PIN && value.all(Char::isDigit)) pin = value
+        },
+        label = {
+            Text(
+                stringResource(
+                    if (hasPin) R.string.settings_change_pin else R.string.settings_set_pin
+                )
+            )
+        },
+        placeholder = { Text(stringResource(R.string.settings_pin_hint)) },
+        singleLine = true,
+        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    TextButton(
+        enabled = pin.length in MIN_PIN..MAX_PIN,
+        onClick = {
+            onSave(pin)
+            pin = ""
+        },
+    ) {
+        Text(stringResource(R.string.action_save))
     }
 }

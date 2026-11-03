@@ -14,6 +14,7 @@ import com.sms.messages.data.AppSettings
 import com.sms.messages.data.ThemeMode
 import com.sms.messages.util.DefaultSmsRole
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,7 +72,58 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setUndoSendSeconds(seconds: Int) = viewModelScope.launch {
+        settingsRepository.setUndoSendSeconds(seconds)
+    }
+
+    fun setAutoDeleteOtp(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setAutoDeleteOtp(enabled)
+        // Turning the option on should clear the backlog straight away rather than waiting
+        // for the next message to arrive.
+        if (enabled) {
+            val removed = repository.purgeExpiredOtp()
+            if (removed > 0) {
+                _message.value = context.resources.getQuantityString(
+                    R.plurals.otp_deleted_result, removed, removed,
+                )
+            }
+        }
+    }
+
+    /**
+     * Turns app lock on or off. Refuses to enable it without a PIN, because that would
+     * leave the user with a lock they cannot open.
+     */
+    fun setAppLock(enabled: Boolean) = viewModelScope.launch {
+        if (enabled && !settingsRepository.settings.first().hasPin) {
+            _message.value = context.getString(R.string.settings_pin_required)
+            return@launch
+        }
+        settingsRepository.setAppLockEnabled(enabled)
+    }
+
+    fun setBiometricUnlock(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setBiometricUnlock(enabled)
+    }
+
+    fun setPin(pin: String) = viewModelScope.launch {
+        if (pin.length !in MIN_PIN..MAX_PIN || !pin.all(Char::isDigit)) {
+            _message.value = context.getString(R.string.settings_pin_invalid)
+            return@launch
+        }
+        settingsRepository.setPin(pin)
+        _message.value = context.getString(R.string.settings_change_pin)
+    }
+
+    /** Used by the lock screen; exposed here so the screen has no repository dependency. */
+    suspend fun verifyPin(pin: String): Boolean = settingsRepository.verifyPin(pin)
+
     fun clearMessage() {
         _message.value = null
+    }
+
+    private companion object {
+        const val MIN_PIN = 4
+        const val MAX_PIN = 6
     }
 }
