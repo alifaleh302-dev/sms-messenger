@@ -7,8 +7,20 @@ Arabic and English interfaces.
 
 ## التحميل / Download
 
-**أحدث نسخة:** انتقل إلى صفحة [Releases](../../releases/latest) وحمّل ملف
-`app-release.apk`.
+**أحدث نسخة (1.1.0):**
+
+| | |
+|---|---|
+| رابط مباشر | [`app-release.apk`](https://github.com/alifaleh302-dev/sms-messenger/releases/download/v1.1.0/app-release.apk) |
+| صفحة الإصدار | [Releases v1.1.0](../../releases/tag/v1.1.0) |
+| الحجم | 2.3 ميجابايت |
+| بصمة SHA-256 | `ee687a1369cf3c704c12332774f657710baac254c708b6db81d00f6b6b4faea7` |
+
+للتحقق من سلامة الملف بعد التحميل:
+
+```bash
+sha256sum app-release.apk
+```
 
 1. حمّل ملف APK على هاتفك.
 2. افتح الملف، وإذا طلب النظام السماح بالتثبيت من مصدر غير معروف فاسمح بذلك.
