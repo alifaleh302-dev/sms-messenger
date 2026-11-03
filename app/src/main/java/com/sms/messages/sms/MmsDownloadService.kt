@@ -1,6 +1,7 @@
 package com.sms.messages.sms
 
 import android.app.Service
+import dagger.hilt.android.AndroidEntryPoint
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
@@ -10,6 +11,7 @@ import android.util.Log
  * configuration; this service keeps the manifest contract complete and logs the request so
  * a future implementation has a defined entry point.
  */
+@AndroidEntryPoint
 class MmsDownloadService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null

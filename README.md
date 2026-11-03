@@ -84,19 +84,47 @@ keyPassword=...
 
 ```
 app/src/main/java/com/sms/messages/
+├── di/              Hilt modules: database, repositories, senders, application scope
 ├── data/            Room entities, DAOs, SmsRepository, settings, contacts, import
 ├── sms/             Receivers and services: send/receive, status, MMS, scheduling, boot
 ├── notifications/   Channels and per-conversation notifications with inline reply
 ├── ui/
 │   ├── screens/     Conversations, chat, compose, search, templates, scheduled, settings
-│   ├── components/  Message bubble, empty state, avatar
+│   ├── components/  Message bubble, composer, search pill, avatar, empty state
 │   ├── viewmodel/   One view model per screen
 │   └── theme/       Material 3 theme
 └── util/            Phone normalisation, time formatting, permissions, default-SMS role
 ```
 
+### حقن التبعيات / Dependency injection
+
+المشروع يستخدم **Hilt**. لا يوجد أي وصول مباشر إلى `Application` من الشاشات أو
+مستقبلات البث:
+
+- `SmsApp` معلَّم بـ `@HiltAndroidApp` ويحقن `CoroutineScope` فقط.
+- `di/AppModule` يوفّر قاعدة البيانات والمستودعات والمُرسِلات كـ `@Singleton`.
+- كل `ViewModel` معلَّم بـ `@HiltViewModel` ويستقبل تبعياته عبر `@Inject constructor`،
+  والشاشات تحصل عليه بـ `hiltViewModel()`.
+- المستقبلات والخدمات (`SmsReceiver`, `SmsStatusReceiver`, `BootReceiver`,
+  `NotificationActionReceiver`, `ScheduledSendReceiver`, `HeadlessSmsSendService`)
+  معلَّمة بـ `@AndroidEntryPoint` وتحصل على تبعياتها بحقن الحقول.
+
 `SmsRepository` هو نقطة الدخول الوحيدة لكل ما يتعلق بالمحادثات، وكل المستقبلات
 والشاشات تمر عبره.
+
+### الواجهة / UI
+
+التصميم يتبع بنية **Google Messages** المعروفة: شريط علوي بعنوان وزر حساب، حقل بحث
+بيضاوي، قائمة محادثات بدون فواصل، زر إنشاء محادثة ممتد أسفل يمين الشاشة، وفقاعات
+رسائل بذيل في الزاوية ووقت داخل الفقاعة، وفاصل تاريخ بين المجموعات.
+
+## الإصدارات / Versions
+
+| الإصدار | أبرز التغييرات |
+|---------|----------------|
+| 1.1.0   | بنية Hilt، تصميم Google Messages، إصلاحات من اختبارات Robolectric |
+| 1.0.2   | تنظيف الأذونات وتوثيق نموذج الأذونات |
+| 1.0.1   | إصلاح انهيار الإقلاع، تسريب النسخ الاحتياطي، ترجمة تنسيق الوقت |
 
 ## الاختبارات / Tests
 
@@ -104,7 +132,16 @@ app/src/main/java/com/sms/messages/
 bash tools/gbuild.sh :app:testDebugUnitTest
 ```
 
-تغطي تطبيع أرقام الهاتف، تنسيق الوقت، وتكافؤ النصوص بين العربية والإنجليزية.
+٥٦ اختبارًا تعمل على JVM. اختبارات Robolectric تشغّل نظام أندرويد الحقيقي (Room +
+SQLite + جداول الموارد) بدل محاكاته:
+
+| الملف | ما يغطيه |
+|-------|----------|
+| `MessageStoreTest` | إرسال/استقبال، حالات الرسائل، المرفوضة، القوالب، المجدولة، غير المقروء |
+| `ContactResolverTest` | البحث في جهات الاتصال مع ذاكرة مؤقتة (كان ينهار قبل الإصلاح) |
+| `SmsSenderTest` | بوابات الإرسال والانحدار الآمن عند تعذّر التقسيم |
+| `NotificationTextTest` | ترجمة النصوص والأرقام العربية وسلوك معرّفات الإشعارات |
+| `PhoneNumbersTest`, `TimeFormatTest`, `SearchQueryTest`, `LocalizationTest` | التطبيع والتنسيق والبحث |
 
 ## الأذونات / Permissions
 

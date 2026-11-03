@@ -153,4 +153,17 @@
     <string name="error_send_failed">Message could not be sent</string>
     <string name="recipients_more">+%1$d</string>
     <string name="mms_placeholder">Multimedia message</string>
+    <string name="start_chat">Start chat</string>
+    <string name="search_conversations">Search conversations</string>
+    <string name="avatar_menu">Account menu</string>
+    <string name="menu_archived">Archived</string>
+    <string name="menu_spam_blocked">Spam &amp; blocked</string>
+    <string name="menu_settings">Messages settings</string>
+    <string name="menu_scheduled">Scheduled</string>
+    <string name="menu_templates">Templates</string>
+    <string name="conversation_menu">Conversation options</string>
+    <string name="search_placeholder">Search</string>
+    <string name="nav_back">Back</string>
+    <string name="chat_actions">More options</string>
+    <string name="action_attach">Attach</string>
 </resources>

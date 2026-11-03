@@ -1,10 +1,14 @@
 package com.sms.messages.ui.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.content.Context
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.sms.messages.data.SettingsRepository
+import com.sms.messages.data.SmsRepository
+import javax.inject.Inject
 import com.sms.messages.R
-import com.sms.messages.SmsApp
 import com.sms.messages.data.AppLanguage
 import com.sms.messages.data.AppSettings
 import com.sms.messages.data.ThemeMode
@@ -16,51 +20,54 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val repository: SmsRepository,
+    private val settingsRepository: SettingsRepository,
+) : ViewModel() {
 
-    private val app: SmsApp = application as SmsApp
-
-    val settings: StateFlow<AppSettings> = app.settings.settings
+    val settings: StateFlow<AppSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppSettings())
 
-    private val _isDefaultSms = MutableStateFlow(DefaultSmsRole.isDefault(app))
+    private val _isDefaultSms = MutableStateFlow(DefaultSmsRole.isDefault(context))
     val isDefaultSms: StateFlow<Boolean> = _isDefaultSms.asStateFlow()
 
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
     fun refreshDefaultRole() {
-        _isDefaultSms.value = DefaultSmsRole.isDefault(app)
+        _isDefaultSms.value = DefaultSmsRole.isDefault(context)
     }
 
-    fun setTheme(mode: ThemeMode) = viewModelScope.launch { app.settings.setTheme(mode) }
+    fun setTheme(mode: ThemeMode) = viewModelScope.launch { settingsRepository.setTheme(mode) }
 
     fun setLanguage(language: AppLanguage) = viewModelScope.launch {
-        app.settings.setLanguage(language)
+        settingsRepository.setLanguage(language)
     }
 
     fun setNotifications(enabled: Boolean) = viewModelScope.launch {
-        app.settings.setNotificationsEnabled(enabled)
+        settingsRepository.setNotificationsEnabled(enabled)
     }
 
-    fun setVibrate(enabled: Boolean) = viewModelScope.launch { app.settings.setVibrate(enabled) }
+    fun setVibrate(enabled: Boolean) = viewModelScope.launch { settingsRepository.setVibrate(enabled) }
 
-    fun setSound(enabled: Boolean) = viewModelScope.launch { app.settings.setSoundEnabled(enabled) }
+    fun setSound(enabled: Boolean) = viewModelScope.launch { settingsRepository.setSoundEnabled(enabled) }
 
     fun setDeliveryReports(enabled: Boolean) = viewModelScope.launch {
-        app.settings.setDeliveryReports(enabled)
+        settingsRepository.setDeliveryReports(enabled)
     }
 
-    fun setAutoRetry(enabled: Boolean) = viewModelScope.launch { app.settings.setAutoRetry(enabled) }
+    fun setAutoRetry(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAutoRetry(enabled) }
 
-    fun setSignature(value: String) = viewModelScope.launch { app.settings.setSignature(value) }
+    fun setSignature(value: String) = viewModelScope.launch { settingsRepository.setSignature(value) }
 
     fun importFromTelephony() = viewModelScope.launch {
-        val count = app.repository.syncFromTelephony()
+        val count = repository.syncFromTelephony()
         _message.value = if (count > 0) {
-            app.getString(R.string.settings_import_result, count)
+            context.getString(R.string.settings_import_result, count)
         } else {
-            app.getString(R.string.settings_import_none)
+            context.getString(R.string.settings_import_none)
         }
     }
 

@@ -21,15 +21,16 @@ data class Contact(
  */
 class ContactResolver(private val context: Context) {
 
-    private val cache = LruCache<String, String?>(2048)
+    // LruCache rejects null values, and most numbers are not in the address book, so an
+    // empty string stands in for "this number has no contact name".
+    private val cache = LruCache<String, String>(2048)
 
     suspend fun displayName(number: String): String? = withContext(Dispatchers.IO) {
         val key = PhoneNumbers.normalize(number)
         if (key.isEmpty()) return@withContext null
-        cache[key]?.let { return@withContext it }
-        if (cache.get(key) == null && cache.snapshot().containsKey(key)) return@withContext null
+        cache.get(key)?.let { return@withContext it.ifEmpty { null } }
         val name = queryName(key)
-        cache.put(key, name)
+        cache.put(key, name ?: NO_NAME)
         name
     }
 
@@ -77,4 +78,8 @@ class ContactResolver(private val context: Context) {
     }
 
     fun invalidate() = cache.evictAll()
+
+    private companion object {
+        const val NO_NAME = ""
+    }
 }

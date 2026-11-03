@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.sms.messages.SmsApp
+import com.sms.messages.data.SmsRepository
 import kotlinx.coroutines.flow.first
 
 /**
@@ -38,14 +38,14 @@ object ScheduledMessageScheduler {
     }
 
     /** Re-arms every pending message; called at boot and after an app update. */
-    suspend fun rescheduleAll(app: SmsApp) {
-        val pending = app.repository.observeScheduled().first()
+    suspend fun rescheduleAll(context: Context, repository: SmsRepository) {
+        val pending = repository.observeScheduled().first()
         val now = System.currentTimeMillis()
         for (item in pending) {
             if (item.scheduledAt <= now) {
-                ScheduledSendReceiver.dispatchNow(app, item.id)
+                ScheduledSendReceiver.dispatchNow(context, item.id)
             } else {
-                schedule(app, item.id, item.scheduledAt)
+                schedule(context, item.id, item.scheduledAt)
             }
         }
         Log.d(TAG, "Re-armed ${pending.size} scheduled messages")

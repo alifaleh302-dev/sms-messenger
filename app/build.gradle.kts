@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 val keystorePropsFile = rootProject.file("keystore.properties")
@@ -20,8 +21,8 @@ android {
         applicationId = "com.sms.messages"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 4
+        versionName = "1.1.0"
         vectorDrawables.useSupportLibrary = true
     }
 
@@ -71,6 +72,8 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // Robolectric runs the real Android framework and needs the merged resources.
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -102,10 +105,19 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.exifinterface)
 
     testImplementation(libs.junit)
+    // Robolectric runs the real framework, so Room, SQLite, PhoneNumberUtils and the
+    // resource system are exercised for real on the JVM instead of being stubbed.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

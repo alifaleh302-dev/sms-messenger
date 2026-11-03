@@ -36,24 +36,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.R
 import com.sms.messages.data.TemplateEntity
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.viewmodel.TemplatesViewModel
-import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.PhoneNumbers
 
 @Composable
 fun TemplatesScreen(
-    viewModel: TemplatesViewModel = viewModel(factory = VmFactory.Factory),
+    onBack: () -> Unit,
+    viewModel: TemplatesViewModel = hiltViewModel(),
 ) {
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<TemplateEntity?>(null) }
     var creating by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = stringResource(R.string.templates_title))
+        TopBar(title = stringResource(R.string.templates_title), onBack = onBack)
         if (templates.isEmpty()) {
             EmptyState(
                 icon = Icons.AutoMirrored.Filled.TextSnippet,
@@ -162,13 +162,14 @@ private fun TemplateEditorDialog(
 
 @Composable
 fun BlockedScreen(
-    viewModel: com.sms.messages.ui.viewmodel.BlockedViewModel = viewModel(factory = VmFactory.Factory),
+    onBack: () -> Unit,
+    viewModel: com.sms.messages.ui.viewmodel.BlockedViewModel = hiltViewModel(),
 ) {
     val blocked by viewModel.blocked.collectAsStateWithLifecycle()
     var number by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = stringResource(R.string.settings_blocked))
+        TopBar(title = stringResource(R.string.settings_blocked), onBack = onBack)
         Row(
             modifier = Modifier
                 .fillMaxWidth()

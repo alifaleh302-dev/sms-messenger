@@ -2,10 +2,15 @@ package com.sms.messages.ui.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.sms.messages.data.SettingsRepository
+import com.sms.messages.data.SmsRepository
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.sms.messages.R
-import com.sms.messages.SmsApp
 import com.sms.messages.data.AppSettings
 import com.sms.messages.data.MessageEntity
 import com.sms.messages.data.MessageStatus
@@ -43,8 +48,12 @@ data class ChatUiState(
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ChatViewModel(
-    private val app: SmsApp,
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    private val repository: SmsRepository,
+    private val settingsRepository: SettingsRepository,
+    @ApplicationContext private val context: Context,
+    private val notifier: MessageNotifier,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -57,15 +66,15 @@ class ChatViewModel(
     private val settings = MutableStateFlow(AppSettings())
 
     val uiState: StateFlow<ChatUiState> = combine(
-        app.repository.observeConversation(conversationId),
-        app.repository.observeMessages(conversationId),
+        repository.observeConversation(conversationId),
+        repository.observeMessages(conversationId),
         draft,
         blocked,
         settings,
     ) { conversation, messages, draftText, isBlocked, appSettings ->
         val address = conversation?.address.orEmpty()
         val title = conversation?.displayName?.takeIf { it.isNotBlank() }
-            ?: PhoneNumbers.format(address).ifEmpty { app.getString(R.string.unknown_contact) }
+            ?: PhoneNumbers.format(address).ifEmpty { context.getString(R.string.unknown_contact) }
         ChatUiState(
             conversationId = conversationId,
             address = address,
@@ -84,32 +93,32 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
-            app.settings.settings.collect { settings.value = it }
+            settingsRepository.settings.collect { settings.value = it }
         }
         viewModelScope.launch {
-            app.repository.observeConversation(conversationId)
+            repository.observeConversation(conversationId)
                 .map { it?.address }
                 .distinctUntilChanged()
                 .flatMapLatest { address ->
                     if (address.isNullOrBlank()) {
                         flowOf(false)
                     } else {
-                        flow { emit(app.repository.isBlocked(address)) }
+                        flow { emit(repository.isBlocked(address)) }
                     }
                 }
                 .collect { blocked.value = it }
         }
         viewModelScope.launch {
-            val conversation = app.repository.observeConversation(conversationId).first()
+            val conversation = repository.observeConversation(conversationId).first()
             draft.value = conversation?.draft.orEmpty()
-            app.repository.markConversationRead(conversationId)
-            MessageNotifier(app).cancel(conversationId)
+            repository.markConversationRead(conversationId)
+            notifier.cancel(conversationId)
         }
     }
 
     fun onDraftChange(value: String) {
         draft.value = value
-        viewModelScope.launch { app.repository.saveDraft(conversationId, value) }
+        viewModelScope.launch { repository.saveDraft(conversationId, value) }
     }
 
     fun send(text: String = draft.value) {
@@ -121,7 +130,7 @@ class ChatViewModel(
         viewModelScope.launch {
             val settingsValue = settings.value
             runCatching {
-                app.repository.sendMessage(
+                repository.sendMessage(
                     address = address,
                     body = body,
                     subscriptionId = settingsValue.defaultSubscriptionId,
@@ -140,45 +149,45 @@ class ChatViewModel(
     }
 
     fun retry(messageId: Long) = viewModelScope.launch {
-        app.repository.retryMessage(messageId, settings.value.deliveryReports)
+        repository.retryMessage(messageId, settings.value.deliveryReports)
     }
 
     fun deleteMessage(messageId: Long) = viewModelScope.launch {
-        app.repository.deleteMessage(messageId)
+        repository.deleteMessage(messageId)
     }
 
     val sendFailed: StateFlow<Boolean> = sendFailure.asStateFlow()
 
     fun markRead() = viewModelScope.launch {
-        app.repository.markConversationRead(conversationId)
-        MessageNotifier(app).cancel(conversationId)
+        repository.markConversationRead(conversationId)
+        notifier.cancel(conversationId)
     }
 
     fun deleteConversation() = viewModelScope.launch {
-        MessageNotifier(app).cancel(conversationId)
-        app.repository.deleteConversation(conversationId)
+        notifier.cancel(conversationId)
+        repository.deleteConversation(conversationId)
     }
 
     fun toggleArchive() = viewModelScope.launch {
-        app.repository.setArchived(conversationId, !uiState.value.archived)
+        repository.setArchived(conversationId, !uiState.value.archived)
     }
 
     fun togglePin() = viewModelScope.launch {
-        app.repository.setPinned(conversationId, !uiState.value.pinned)
+        repository.setPinned(conversationId, !uiState.value.pinned)
     }
 
     fun toggleMute() = viewModelScope.launch {
-        app.repository.setMuted(conversationId, !uiState.value.muted)
+        repository.setMuted(conversationId, !uiState.value.muted)
     }
 
     fun block() = viewModelScope.launch {
         val address = uiState.value.address
-        if (address.isNotBlank()) app.repository.blockNumber(address)
+        if (address.isNotBlank()) repository.blockNumber(address)
     }
 
     fun unblock() = viewModelScope.launch {
         val address = uiState.value.address
-        if (address.isNotBlank()) app.repository.unblockNumber(address)
+        if (address.isNotBlank()) repository.unblockNumber(address)
     }
 
     fun statusOf(message: MessageEntity): MessageStatus =

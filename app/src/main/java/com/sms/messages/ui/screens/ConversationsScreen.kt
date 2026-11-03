@@ -3,6 +3,7 @@ package com.sms.messages.ui.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +14,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ManageSearch
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -25,14 +28,14 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,84 +46,100 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.R
+import com.sms.messages.ui.components.AvatarChip
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.components.InitialAvatar
+import com.sms.messages.ui.components.SearchPill
 import com.sms.messages.ui.viewmodel.ConversationListItem
 import com.sms.messages.ui.viewmodel.ConversationsViewModel
-import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.TimeFormat
 
+/**
+ * The conversation list, laid out the way Messages does it: a title bar with an account
+ * chip, a rounded search field, full-bleed rows without dividers, and an extended compose
+ * button anchored bottom-end.
+ */
 @Composable
 fun ConversationsScreen(
     onOpenConversation: (Long) -> Unit,
     onNewMessage: () -> Unit,
     onOpenArchived: () -> Unit,
     onOpenSearch: () -> Unit,
-    viewModel: ConversationsViewModel = viewModel(factory = VmFactory.Factory),
+    onOpenBlocked: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenScheduled: () -> Unit,
+    onOpenTemplates: () -> Unit,
+    viewModel: ConversationsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
-    val unread by viewModel.unreadTotal.collectAsStateWithLifecycle()
     var menuFor by remember { mutableStateOf<ConversationListItem?>(null) }
+    var accountMenu by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = viewModel::onQueryChange,
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            trailingIcon = {
-                IconButton(onClick = onOpenSearch) {
-                    Icon(Icons.AutoMirrored.Filled.ManageSearch, contentDescription = stringResource(R.string.action_search_all))
-                }
-            },
-            placeholder = { Text(stringResource(R.string.search_hint)) },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        )
-
-        if (archived.isNotEmpty()) {
-            TextButton(
-                onClick = onOpenArchived,
-                modifier = Modifier.padding(horizontal = 12.dp),
-            ) {
-                Icon(Icons.Filled.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.archived_count, archived.size))
-            }
-        }
-
-        if (state.items.isEmpty() && !state.loading) {
-            EmptyState(
-                icon = Icons.Filled.ChatBubbleOutline,
-                title = stringResource(R.string.empty_conversations),
-                hint = stringResource(R.string.empty_conversations_hint),
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            ConversationsTopBar(onOpenAccountMenu = { accountMenu = true })
+            SearchPill(
+                value = state.query,
+                onValueChange = viewModel::onQueryChange,
+                placeholder = stringResource(R.string.search_conversations),
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
-        } else {
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(state.items, key = { it.id }) { item ->
-                    ConversationRow(
-                        item = item,
-                        onClick = {
-                            viewModel.markRead(item.id)
-                            onOpenConversation(item.id)
-                        },
-                        onLongClick = { menuFor = item },
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+            Spacer(Modifier.height(4.dp))
+
+            if (state.items.isEmpty() && !state.loading) {
+                EmptyState(
+                    icon = Icons.Filled.ChatBubbleOutline,
+                    title = stringResource(R.string.empty_conversations),
+                    hint = stringResource(R.string.empty_conversations_hint),
+                )
+            } else {
+                LazyColumn(Modifier.fillMaxSize()) {
+                    items(state.items, key = { it.id }) { item ->
+                        ConversationRow(
+                            item = item,
+                            onClick = {
+                                viewModel.markRead(item.id)
+                                onOpenConversation(item.id)
+                            },
+                            onLongClick = { menuFor = item },
+                        )
+                    }
+                    // Keeps the last row clear of the compose button.
+                    item { Spacer(Modifier.height(96.dp)) }
                 }
-                item { Spacer(Modifier.height(88.dp)) }
             }
         }
+
+        if (accountMenu) {
+            AccountMenu(
+                hasArchived = archived.isNotEmpty(),
+                onDismiss = { accountMenu = false },
+                onArchived = { accountMenu = false; onOpenArchived() },
+                onBlocked = { accountMenu = false; onOpenBlocked() },
+                onScheduled = { accountMenu = false; onOpenScheduled() },
+                onTemplates = { accountMenu = false; onOpenTemplates() },
+                onSearchAll = { accountMenu = false; onOpenSearch() },
+                onSettings = { accountMenu = false; onOpenSettings() },
+            )
+        }
+
+        ComposeButton(
+            label = stringResource(R.string.start_chat),
+            onClick = onNewMessage,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+        )
     }
 
     menuFor?.let { item ->
@@ -137,6 +156,69 @@ fun ConversationsScreen(
     }
 }
 
+@Composable
+private fun ConversationsTopBar(onOpenAccountMenu: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f),
+        )
+        AvatarChip(
+            label = stringResource(R.string.app_name),
+            onClick = onOpenAccountMenu,
+        )
+    }
+}
+
+/** The overflow behind the account chip, matching the entries Messages exposes. */
+@Composable
+private fun AccountMenu(
+    hasArchived: Boolean,
+    onDismiss: () -> Unit,
+    onArchived: () -> Unit,
+    onBlocked: () -> Unit,
+    onScheduled: () -> Unit,
+    onTemplates: () -> Unit,
+    onSearchAll: () -> Unit,
+    onSettings: () -> Unit,
+) {
+    Box(Modifier.fillMaxSize()) {
+        DropdownMenu(
+            expanded = true,
+            onDismissRequest = onDismiss,
+            modifier = Modifier.widthIn(min = 232.dp),
+        ) {
+            if (hasArchived) {
+                MenuEntry(Icons.Filled.Archive, R.string.menu_archived, onArchived)
+            }
+            MenuEntry(Icons.Filled.Block, R.string.menu_spam_blocked, onBlocked)
+            MenuEntry(Icons.Filled.Schedule, R.string.menu_scheduled, onScheduled)
+            MenuEntry(Icons.AutoMirrored.Filled.TextSnippet, R.string.menu_templates, onTemplates)
+            MenuEntry(Icons.Filled.Settings, R.string.menu_settings, onSettings)
+        }
+    }
+}
+
+@Composable
+private fun MenuEntry(icon: ImageVector, labelRes: Int, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(stringResource(labelRes)) },
+        leadingIcon = { Icon(icon, contentDescription = null) },
+        onClick = onClick,
+    )
+}
+
+/**
+ * A conversation row without a divider: the avatar leads, the name and snippet share the
+ * remaining width, and the timestamp and unread badge sit on the trailing edge.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ConversationRow(
@@ -148,38 +230,28 @@ private fun ConversationRow(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        InitialAvatar(label = item.name, colorIndex = item.colorIndex)
-        Spacer(Modifier.width(12.dp))
+        InitialAvatar(label = item.name, colorIndex = item.colorIndex, size = 44.dp)
+        Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = item.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = if (item.unread > 0) FontWeight.Bold else FontWeight.Medium,
+                    fontWeight = if (item.unread > 0) FontWeight.Bold else FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 if (item.pinned) {
                     Spacer(Modifier.width(6.dp))
-                    Icon(
-                        Icons.Filled.PushPin,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    TrailingGlyph(Icons.Filled.PushPin)
                 }
                 if (item.muted) {
                     Spacer(Modifier.width(6.dp))
-                    Icon(
-                        Icons.Filled.NotificationsOff,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    TrailingGlyph(Icons.Filled.NotificationsOff)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -191,7 +263,7 @@ private fun ConversationRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(3.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = item.draft.ifBlank { item.snippet },
@@ -206,22 +278,76 @@ private fun ConversationRow(
                     modifier = Modifier.weight(1f),
                 )
                 if (item.unread > 0) {
-                    Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraLarge)
-                            .background(MaterialTheme.colorScheme.primary)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = item.unread.toString(),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
+                    Spacer(Modifier.width(10.dp))
+                    UnreadBadge(item.unread)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TrailingGlyph(icon: ImageVector) {
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = Modifier.size(14.dp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** A round count badge; wide enough for two digits without turning into a pill. */
+@Composable
+private fun UnreadBadge(count: Int) {
+    val wide = count > 9
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(percent = 50))
+            .background(MaterialTheme.colorScheme.primary)
+            .padding(horizontal = if (wide) 6.dp else 0.dp)
+            .widthIn(min = 20.dp)
+            .height(20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = if (count > 99) "99+" else count.toString(),
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+/** The extended compose button: a speech bubble with a label, as Messages shows it. */
+@Composable
+private fun ComposeButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        onClick = onClick,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ChatBubbleOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
         }
     }
 }
@@ -239,36 +365,20 @@ private fun ConversationContextMenu(
 ) {
     Box(Modifier.fillMaxSize()) {
         DropdownMenu(expanded = true, onDismissRequest = onDismiss) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_archive)) },
-                leadingIcon = { Icon(Icons.Filled.Archive, contentDescription = null) },
-                onClick = onArchive,
+            MenuEntry(Icons.Filled.Archive, R.string.action_archive, onArchive)
+            MenuEntry(Icons.Filled.DoneAll, R.string.action_mark_read, onMarkRead)
+            MenuEntry(
+                Icons.Filled.PushPin,
+                if (item.pinned) R.string.action_unpin else R.string.action_pin,
+                onPin,
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_mark_read)) },
-                leadingIcon = { Icon(Icons.Filled.DoneAll, contentDescription = null) },
-                onClick = onMarkRead,
+            MenuEntry(
+                Icons.Filled.NotificationsOff,
+                if (item.muted) R.string.action_unmute else R.string.action_mute,
+                onMute,
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(if (item.pinned) R.string.action_unpin else R.string.action_pin)) },
-                leadingIcon = { Icon(Icons.Filled.PushPin, contentDescription = null) },
-                onClick = onPin,
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(if (item.muted) R.string.action_unmute else R.string.action_mute)) },
-                leadingIcon = { Icon(Icons.Filled.NotificationsOff, contentDescription = null) },
-                onClick = onMute,
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_block)) },
-                leadingIcon = { Icon(Icons.Filled.Block, contentDescription = null) },
-                onClick = onBlock,
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_delete)) },
-                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                onClick = onDelete,
-            )
+            MenuEntry(Icons.Filled.Block, R.string.action_block, onBlock)
+            MenuEntry(Icons.Filled.Delete, R.string.action_delete, onDelete)
         }
     }
 }
@@ -277,7 +387,7 @@ private fun ConversationContextMenu(
 fun ArchivedScreen(
     onBack: () -> Unit,
     onOpenConversation: (Long) -> Unit,
-    viewModel: ConversationsViewModel = viewModel(factory = VmFactory.Factory),
+    viewModel: ConversationsViewModel = hiltViewModel(),
 ) {
     val items by viewModel.archived.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
@@ -293,11 +403,11 @@ fun ArchivedScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        InitialAvatar(label = item.name, colorIndex = item.colorIndex, size = 40.dp)
-                        Spacer(Modifier.width(12.dp))
+                        InitialAvatar(label = item.name, colorIndex = item.colorIndex, size = 44.dp)
+                        Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(item.name, style = MaterialTheme.typography.titleMedium)
                             Text(
@@ -308,16 +418,20 @@ fun ArchivedScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        TextButton(onClick = { onOpenConversation(item.id) }) { Text(stringResource(R.string.action_open)) }
-                        TextButton(onClick = { viewModel.unarchive(item.id) }) { Text(stringResource(R.string.action_restore)) }
+                        TextButton(onClick = { onOpenConversation(item.id) }) {
+                            Text(stringResource(R.string.action_open))
+                        }
+                        TextButton(onClick = { viewModel.unarchive(item.id) }) {
+                            Text(stringResource(R.string.action_restore))
+                        }
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
             }
         }
     }
 }
 
+/** A lightweight title bar: back arrow, title, and optional trailing actions. */
 @Composable
 fun TopBar(
     title: String,
@@ -327,23 +441,24 @@ fun TopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(start = 4.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.action_back),
+                    contentDescription = stringResource(R.string.nav_back),
                 )
             }
         }
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = if (onBack == null) 8.dp else 0.dp),
+                .padding(start = if (onBack == null) 12.dp else 0.dp),
         )
         actions()
     }

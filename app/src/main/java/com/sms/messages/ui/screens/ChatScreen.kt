@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Call
@@ -37,7 +36,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -58,20 +56,22 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.R
 import com.sms.messages.data.MessageEntity
 import com.sms.messages.data.MessageStatus
+import com.sms.messages.data.MessageType
 import com.sms.messages.ui.components.InitialAvatar
+import com.sms.messages.ui.components.ChatComposer
+import com.sms.messages.ui.components.DayDivider
 import com.sms.messages.ui.components.MessageBubble
 import com.sms.messages.ui.viewmodel.ChatViewModel
-import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.TimeFormat
 
 @Composable
 fun ChatScreen(
     onBack: () -> Unit,
-    viewModel: ChatViewModel = viewModel(factory = VmFactory.Factory),
+    viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -200,7 +200,7 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             var lastDay = ""
-            state.messages.forEach { message ->
+            state.messages.forEachIndexed { index, message ->
                 val day = TimeFormat.dayLabel(
                     timestamp = message.timestamp,
                     todayLabel = todayLabel,
@@ -209,56 +209,30 @@ fun ChatScreen(
                 if (day != lastDay) {
                     lastDay = day
                     item(key = "day-$day") {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Surface(
-                                shape = MaterialTheme.shapes.extraLarge,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                            ) {
-                                Text(
-                                    text = day,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
+                        DayDivider(label = day)
                     }
                 }
                 item(key = message.id) {
+                    val next = state.messages.getOrNull(index + 1)
+                    val sameSenderNext = next != null &&
+                        (next.type == MessageType.INBOX) == (message.type == MessageType.INBOX)
                     MessageBubble(
                         message = message,
                         onLongPress = { selected = message },
                         onRetry = { viewModel.retry(message.id) },
+                        showTail = !sameSenderNext,
                     )
                 }
             }
         }
 
-        Surface(tonalElevation = 3.dp) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                OutlinedTextField(
-                    value = state.draft,
-                    onValueChange = viewModel::onDraftChange,
-                    placeholder = { Text(stringResource(R.string.message_hint)) },
-                    modifier = Modifier.weight(1f),
-                    maxLines = 5,
-                )
-                Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = { viewModel.send() },
-                    enabled = state.draft.isNotBlank() && !state.blocked,
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.action_send))
-                }
-            }
+            ChatComposer(
+                value = state.draft,
+                onValueChange = viewModel::onDraftChange,
+                onSend = { viewModel.send() },
+                enabled = !state.blocked,
+            )
         }
-    }
 
         SnackbarHost(
             hostState = snackbarHostState,

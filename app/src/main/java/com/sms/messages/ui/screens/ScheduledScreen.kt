@@ -23,21 +23,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.R
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.viewmodel.ScheduledViewModel
-import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.TimeFormat
 
 @Composable
 fun ScheduledScreen(
-    viewModel: ScheduledViewModel = viewModel(factory = VmFactory.Factory),
+    onBack: () -> Unit,
+    viewModel: ScheduledViewModel = hiltViewModel(),
 ) {
     val items by viewModel.items.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(title = stringResource(R.string.tab_scheduled))
+        TopBar(title = stringResource(R.string.tab_scheduled), onBack = onBack)
         if (items.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.Schedule,

@@ -333,7 +333,7 @@ class SmsRepository(
     }
 
     private suspend fun refreshAllSummaries() {
-        for (conversation in conversations.getActive()) {
+        for (conversation in conversations.getAll()) {
             refreshConversationSummary(conversation.id)
         }
     }

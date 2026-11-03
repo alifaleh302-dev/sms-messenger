@@ -2,10 +2,15 @@ package com.sms.messages.sms
 
 import android.app.Activity
 import android.content.BroadcastReceiver
+import com.sms.messages.data.SmsRepository
+import com.sms.messages.notifications.MessageNotifier
+import com.sms.messages.di.ApplicationScope
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.sms.messages.SmsApp
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -13,7 +18,15 @@ import kotlinx.coroutines.launch
  * once every part of a multipart message has reported, so a partially delivered message is
  * not shown as sent.
  */
+@AndroidEntryPoint
 class SmsStatusReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var repository: SmsRepository
+
+    @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
+
+    @Inject lateinit var notifier: MessageNotifier
+
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
@@ -25,10 +38,9 @@ class SmsStatusReceiver : BroadcastReceiver() {
         val result = resultCode.takeIf { it != 0 } ?: Activity.RESULT_OK
         val delivered = action == ACTION_DELIVERED
 
-        val app = SmsApp.from(context)
         val pendingResult = goAsync()
 
-        app.applicationScope.launch {
+        applicationScope.launch {
             try {
                 if (delivered) {
                     val results = deliveredPartResults
@@ -36,7 +48,7 @@ class SmsStatusReceiver : BroadcastReceiver() {
                     results[partIndex] = result
                     if (results.size >= partCount) {
                         if (results.values.all { it == Activity.RESULT_OK }) {
-                            app.repository.applyDeliveredResult(messageId)
+                            repository.applyDeliveredResult(messageId)
                         }
                         deliveredPartResults.remove(messageId)
                     }
@@ -47,13 +59,12 @@ class SmsStatusReceiver : BroadcastReceiver() {
                     if (results.size >= partCount) {
                         val success = results.values.all { it == Activity.RESULT_OK }
                         val errorCode = results.values.firstOrNull { it != Activity.RESULT_OK }
-                        app.repository.applySentResult(messageId, success, errorCode)
+                        repository.applySentResult(messageId, success, errorCode)
                         sentPartResults.remove(messageId)
                         if (!success) {
-                            val message = app.repository.messageById(messageId)
+                            val message = repository.messageById(messageId)
                             if (message != null) {
-                                com.sms.messages.notifications.MessageNotifier(context)
-                                    .notifySendFailure(messageId, message.address)
+                                notifier.notifySendFailure(messageId, message.address)
                             }
                         }
                     }

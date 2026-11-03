@@ -30,19 +30,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.BuildConfig
 import com.sms.messages.R
 import com.sms.messages.data.AppLanguage
 import com.sms.messages.data.ThemeMode
 import com.sms.messages.ui.viewmodel.SettingsViewModel
-import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.DefaultSmsRole
 
 @Composable
 fun SettingsScreen(
     onOpenBlocked: () -> Unit = {},
-    viewModel: SettingsViewModel = viewModel(factory = VmFactory.Factory),
+    viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isDefault by viewModel.isDefaultSms.collectAsStateWithLifecycle()

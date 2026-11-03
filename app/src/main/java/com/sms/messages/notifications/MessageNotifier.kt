@@ -1,37 +1,48 @@
 package com.sms.messages.notifications
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import com.sms.messages.MainActivity
 import com.sms.messages.R
-import com.sms.messages.SmsApp
 import com.sms.messages.sms.NotificationActionReceiver
 import com.sms.messages.util.PhoneNumbers
+import com.sms.messages.data.SettingsRepository
+import com.sms.messages.data.SmsRepository
+import com.sms.messages.di.ApplicationScope
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** Builds and posts the per-conversation notification, including the inline reply action. */
-class MessageNotifier(private val context: Context) {
+@Singleton
+class MessageNotifier @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val repository: SmsRepository,
+    private val settingsRepository: SettingsRepository,
+    @ApplicationScope private val scope: CoroutineScope,
+) {
 
     private val manager = NotificationManagerCompat.from(context)
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun notifyIncoming(conversationId: Long, address: String, body: String) {
-        val app = SmsApp.from(context)
         scope.launch {
-            val settings = app.settings.settings.first()
+            val settings = settingsRepository.settings.first()
             if (!settings.notificationsEnabled) return@launch
             // A muted conversation still records the message, it just must not alert.
-            val muted = app.repository.isConversationMuted(conversationId)
-            val name = app.repository.contactName(address)
+            val muted = repository.isConversationMuted(conversationId)
+            val name = repository.contactName(address)
             post(
                 conversationId = conversationId,
                 address = address,
@@ -53,6 +64,12 @@ class MessageNotifier(private val context: Context) {
         sound: Boolean,
         silent: Boolean = false,
     ) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        ) return
+        if (!manager.areNotificationsEnabled()) return
         val title = name ?: PhoneNumbers.format(address).ifEmpty { address }
         val content = buildContentIntent(conversationId)
 
@@ -115,6 +132,12 @@ class MessageNotifier(private val context: Context) {
     }
 
     private fun postSummary() {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        ) return
+        if (!manager.areNotificationsEnabled()) return
         val summary = NotificationCompat.Builder(context, Notifications.CHANNEL_MESSAGES)
             .setSmallIcon(R.drawable.ic_message)
             .setContentTitle(context.getString(R.string.notification_new_message))
@@ -134,9 +157,8 @@ class MessageNotifier(private val context: Context) {
 
     fun cancelAll() {
         runCatching {
-            val app = SmsApp.from(context)
             scope.launch {
-                val all = app.repository.observeConversations().first()
+                val all = repository.observeConversations().first()
                 all.forEach { manager.cancel(Notifications.idForConversation(it.id)) }
             }
             manager.cancel(Notifications.SUMMARY_ID)
@@ -144,6 +166,12 @@ class MessageNotifier(private val context: Context) {
     }
 
     fun notifySendFailure(messageId: Long, address: String) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        ) return
+        if (!manager.areNotificationsEnabled()) return
         val title = PhoneNumbers.format(address).ifEmpty { address }
         val builder = NotificationCompat.Builder(context, Notifications.CHANNEL_SENDING)
             .setSmallIcon(R.drawable.ic_error)

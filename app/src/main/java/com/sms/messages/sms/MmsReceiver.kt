@@ -1,13 +1,17 @@
 package com.sms.messages.sms
 
 import android.content.BroadcastReceiver
+import com.sms.messages.data.SmsRepository
+import com.sms.messages.di.ApplicationScope
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
 import com.sms.messages.R
-import com.sms.messages.SmsApp
 import com.sms.messages.notifications.MessageNotifier
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -15,7 +19,15 @@ import kotlinx.coroutines.launch
  * application/vnd.wap.mms-message carries a notification that points at the MMS content,
  * which is then downloaded by [MmsDownloadService].
  */
+@AndroidEntryPoint
 class MmsReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var repository: SmsRepository
+
+    @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
+
+    @Inject lateinit var notifier: MessageNotifier
+
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
@@ -29,9 +41,8 @@ class MmsReceiver : BroadcastReceiver() {
             return
         }
 
-        val app = SmsApp.from(context)
         val pendingResult = goAsync()
-        app.applicationScope.launch {
+        applicationScope.launch {
             try {
                 for (message in push) {
                     // The WAP push body is a binary MMS notification, not text, so it must
@@ -40,15 +51,15 @@ class MmsReceiver : BroadcastReceiver() {
                     val address = message.displayOriginatingAddress
                         ?: message.originatingAddress
                         ?: continue
-                    val id = app.repository.persistIncoming(
+                    val id = repository.persistIncoming(
                         address = address,
                         body = body,
                         timestamp = System.currentTimeMillis(),
                         subscriptionId = intent.getIntExtra("subscription", -1),
                     )
                     if (id > 0) {
-                        val conversation = app.repository.ensureConversation(address)
-                        MessageNotifier(context).notifyIncoming(conversation.id, address, body)
+                        val conversation = repository.ensureConversation(address)
+                        notifier.notifyIncoming(conversation.id, address, body)
                     }
                 }
                 startDownload(context, intent)

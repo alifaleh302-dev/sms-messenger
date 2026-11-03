@@ -2,24 +2,38 @@ package com.sms.messages.sms
 
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
+import com.sms.messages.data.SettingsRepository
+import com.sms.messages.data.SmsRepository
+import com.sms.messages.di.ApplicationScope
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.RemoteInput
-import com.sms.messages.SmsApp
 import com.sms.messages.notifications.MessageNotifier
 import com.sms.messages.notifications.Notifications
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** Handles the inline reply and "mark as read" actions attached to message notifications. */
+@AndroidEntryPoint
 class NotificationActionReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var repository: SmsRepository
+
+    @Inject lateinit var settingsRepository: SettingsRepository
+
+    @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
+
+    @Inject lateinit var notifier: MessageNotifier
+
 
     override fun onReceive(context: Context, intent: Intent) {
         val conversationId = intent.getLongExtra(EXTRA_CONVERSATION_ID, -1L)
         if (conversationId <= 0) return
 
-        val app = SmsApp.from(context)
         val pendingResult = goAsync()
 
         when (intent.action) {
@@ -34,18 +48,18 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     return
                 }
                 val address = intent.getStringExtra(EXTRA_ADDRESS)
-                app.applicationScope.launch {
+                applicationScope.launch {
                     try {
-                        val settings = app.settings.settings.first()
-                        val target = address ?: app.repository.conversationAddress(conversationId)
+                        val settings = settingsRepository.settings.first()
+                        val target = address ?: repository.conversationAddress(conversationId)
                         if (target.isNullOrBlank()) return@launch
-                        app.repository.sendMessage(
+                        repository.sendMessage(
                             address = target,
                             body = text,
                             subscriptionId = settings.defaultSubscriptionId,
                             deliveryReport = settings.deliveryReports,
                         )
-                        MessageNotifier(context).cancel(conversationId)
+                        notifier.cancel(conversationId)
                     } catch (t: Throwable) {
                         Log.e(TAG, "Inline reply failed", t)
                     } finally {
@@ -55,9 +69,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
             }
 
             ACTION_MARK_READ -> {
-                app.applicationScope.launch {
+                applicationScope.launch {
                     try {
-                        app.repository.markConversationRead(conversationId)
+                        repository.markConversationRead(conversationId)
                         context.getSystemService(NotificationManager::class.java)
                             ?.cancel(Notifications.idForConversation(conversationId))
                     } catch (t: Throwable) {

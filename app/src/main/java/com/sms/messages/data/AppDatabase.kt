@@ -32,7 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun blocked(): BlockedNumberDao
 
     companion object {
-        private const val NAME = "sms_messenger.db"
+        const val NAME = "sms_messenger.db"
 
         @Volatile private var instance: AppDatabase? = null
 

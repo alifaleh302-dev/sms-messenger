@@ -140,4 +140,17 @@
     <string name="error_send_failed">تعذر إرسال الرسالة</string>
     <string name="recipients_more">‏+%1$d</string>
     <string name="mms_placeholder">رسالة وسائط</string>
+    <string name="start_chat">محادثة جديدة</string>
+    <string name="search_conversations">ابحث في المحادثات</string>
+    <string name="avatar_menu">قائمة الحساب</string>
+    <string name="menu_archived">المؤرشفة</string>
+    <string name="menu_spam_blocked">الرسائل المزعجة والمحظورة</string>
+    <string name="menu_settings">إعدادات الرسائل</string>
+    <string name="menu_scheduled">المجدولة</string>
+    <string name="menu_templates">القوالب</string>
+    <string name="conversation_menu">خيارات المحادثة</string>
+    <string name="search_placeholder">بحث</string>
+    <string name="nav_back">رجوع</string>
+    <string name="chat_actions">خيارات أخرى</string>
+    <string name="action_attach">إرفاق</string>
 </resources>

@@ -23,8 +23,9 @@ interface ConversationDao {
     @Query("SELECT * FROM conversations WHERE archived = 1 ORDER BY lastMessageAt DESC")
     fun observeArchived(): Flow<List<ConversationEntity>>
 
+    /** Every conversation, archived included. Use [observeActive] for the visible list. */
     @Query("SELECT * FROM conversations ORDER BY lastMessageAt DESC")
-    suspend fun getActive(): List<ConversationEntity>
+    suspend fun getAll(): List<ConversationEntity>
 
     @Query("SELECT * FROM conversations WHERE id = :id")
     fun observeById(id: Long): Flow<ConversationEntity?>

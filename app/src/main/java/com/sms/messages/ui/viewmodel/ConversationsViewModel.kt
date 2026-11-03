@@ -1,8 +1,10 @@
 package com.sms.messages.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.sms.messages.data.SmsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
-import com.sms.messages.SmsApp
 import com.sms.messages.data.ConversationEntity
 import com.sms.messages.util.PhoneNumbers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,12 +34,15 @@ data class ConversationsUiState(
     val loading: Boolean = true,
 )
 
-class ConversationsViewModel(private val app: SmsApp) : ViewModel() {
+@HiltViewModel
+class ConversationsViewModel @Inject constructor(
+    private val repository: SmsRepository,
+) : ViewModel() {
 
     private val query = MutableStateFlow("")
 
     val uiState: StateFlow<ConversationsUiState> = combine(
-        app.repository.observeConversations(),
+        repository.observeConversations(),
         query,
     ) { conversations, text ->
         val filtered = if (text.isBlank()) {
@@ -57,7 +62,7 @@ class ConversationsViewModel(private val app: SmsApp) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ConversationsUiState())
 
     val archived: StateFlow<List<ConversationListItem>> = combine(
-        app.repository.observeArchived(),
+        repository.observeArchived(),
         query,
     ) { list, text ->
         val filtered = if (text.isBlank()) {
@@ -71,28 +76,28 @@ class ConversationsViewModel(private val app: SmsApp) : ViewModel() {
         filtered.map { it.toItem() }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val unreadTotal: StateFlow<Int> = app.repository.observeTotalUnread()
+    val unreadTotal: StateFlow<Int> = repository.observeTotalUnread()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     fun onQueryChange(value: String) {
         query.value = value
     }
 
-    fun archive(id: Long) = viewModelScope.launch { app.repository.setArchived(id, true) }
+    fun archive(id: Long) = viewModelScope.launch { repository.setArchived(id, true) }
 
-    fun unarchive(id: Long) = viewModelScope.launch { app.repository.setArchived(id, false) }
+    fun unarchive(id: Long) = viewModelScope.launch { repository.setArchived(id, false) }
 
     fun togglePin(id: Long, pinned: Boolean) =
-        viewModelScope.launch { app.repository.setPinned(id, !pinned) }
+        viewModelScope.launch { repository.setPinned(id, !pinned) }
 
     fun toggleMute(id: Long, muted: Boolean) =
-        viewModelScope.launch { app.repository.setMuted(id, !muted) }
+        viewModelScope.launch { repository.setMuted(id, !muted) }
 
-    fun markRead(id: Long) = viewModelScope.launch { app.repository.markConversationRead(id) }
+    fun markRead(id: Long) = viewModelScope.launch { repository.markConversationRead(id) }
 
-    fun delete(id: Long) = viewModelScope.launch { app.repository.deleteConversation(id) }
+    fun delete(id: Long) = viewModelScope.launch { repository.deleteConversation(id) }
 
-    fun block(address: String) = viewModelScope.launch { app.repository.blockNumber(address) }
+    fun block(address: String) = viewModelScope.launch { repository.blockNumber(address) }
 
     private fun ConversationEntity.toItem(): ConversationListItem = ConversationListItem(
         id = id,

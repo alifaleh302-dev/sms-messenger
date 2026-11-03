@@ -8,23 +8,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import dagger.hilt.android.AndroidEntryPoint
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TextSnippet
-import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -56,9 +46,9 @@ import com.sms.messages.ui.screens.SettingsScreen
 import com.sms.messages.ui.screens.TemplatesScreen
 import com.sms.messages.ui.theme.SmsTheme
 import com.sms.messages.ui.viewmodel.SettingsViewModel
-import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.Permissions
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private val permissionLauncher = registerForActivityResult(
@@ -84,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            val settingsViewModel: SettingsViewModel = viewModel(factory = VmFactory.Factory)
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
             var hasSms by remember { mutableStateOf(Permissions.hasSms(this)) }
             var requested by remember { mutableStateOf(false) }
@@ -185,13 +175,6 @@ private fun MessagesApp(
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
-    val tabs = listOf(
-        Triple(Routes.CONVERSATIONS, R.string.tab_chats, Icons.Filled.ChatBubble),
-        Triple(Routes.SCHEDULED, R.string.tab_scheduled, Icons.Filled.Schedule),
-        Triple(Routes.TEMPLATES, R.string.tab_templates, Icons.AutoMirrored.Filled.TextSnippet),
-        Triple(Routes.SETTINGS, R.string.tab_settings, Icons.Filled.Settings),
-    )
-
     LaunchedEffect(initialConversationId, initialAddress) {
         when {
             initialConversationId != null -> navController.navigate(Routes.chat(initialConversationId))
@@ -199,38 +182,7 @@ private fun MessagesApp(
         }
     }
 
-    Scaffold(
-        bottomBar = {
-            if (currentRoute in tabs.map { it.first }) {
-                NavigationBar {
-                    tabs.forEach { (route, labelRes, icon) ->
-                        NavigationBarItem(
-                            selected = currentRoute == route,
-                            onClick = {
-                                navController.navigate(route) {
-                                    popUpTo(Routes.CONVERSATIONS) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(icon, contentDescription = stringResource(labelRes)) },
-                            label = { Text(stringResource(labelRes)) },
-                        )
-                    }
-                }
-            }
-        },
-        floatingActionButton = {
-            if (currentRoute == Routes.CONVERSATIONS) {
-                FloatingActionButton(onClick = { navController.navigate(Routes.compose()) }) {
-                    Icon(
-                        Icons.Filled.Edit,
-                        contentDescription = stringResource(R.string.action_new_message),
-                    )
-                }
-            }
-        },
-    ) { padding ->
+    Scaffold { padding ->
         Box(
             Modifier
                 .fillMaxSize()
@@ -243,6 +195,10 @@ private fun MessagesApp(
                         onNewMessage = { navController.navigate(Routes.compose()) },
                         onOpenArchived = { navController.navigate(Routes.ARCHIVED) },
                         onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                        onOpenBlocked = { navController.navigate(Routes.BLOCKED) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onOpenScheduled = { navController.navigate(Routes.SCHEDULED) },
+                        onOpenTemplates = { navController.navigate(Routes.TEMPLATES) },
                     )
                 }
                 composable(
@@ -272,9 +228,15 @@ private fun MessagesApp(
                         onOpenConversation = { navController.navigate(Routes.chat(it)) },
                     )
                 }
-                composable(Routes.TEMPLATES) { TemplatesScreen() }
-                composable(Routes.SCHEDULED) { ScheduledScreen() }
-                composable(Routes.BLOCKED) { BlockedScreen() }
+                composable(Routes.TEMPLATES) {
+                    TemplatesScreen(onBack = { navController.popBackStack() })
+                }
+                composable(Routes.SCHEDULED) {
+                    ScheduledScreen(onBack = { navController.popBackStack() })
+                }
+                composable(Routes.BLOCKED) {
+                    BlockedScreen(onBack = { navController.popBackStack() })
+                }
                 composable(Routes.SETTINGS) {
                     SettingsScreen(onOpenBlocked = { navController.navigate(Routes.BLOCKED) })
                 }

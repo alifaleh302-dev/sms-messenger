@@ -1,12 +1,17 @@
 package com.sms.messages.sms
 
 import android.content.BroadcastReceiver
+import com.sms.messages.data.SmsRepository
+import com.sms.messages.di.ApplicationScope
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
-import com.sms.messages.SmsApp
 import com.sms.messages.notifications.MessageNotifier
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -14,7 +19,15 @@ import kotlinx.coroutines.launch
  * SMS_DELIVER; SMS_RECEIVED is also handled so the app still shows messages while it is
  * waiting for the role to be granted.
  */
+@AndroidEntryPoint
 class SmsReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var repository: SmsRepository
+
+    @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
+
+    @Inject lateinit var notifier: MessageNotifier
+
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
@@ -38,22 +51,20 @@ class SmsReceiver : BroadcastReceiver() {
 
         if (grouped.isEmpty()) return
 
-        val app = SmsApp.from(context)
         val pendingResult = goAsync()
-        app.applicationScope.launch {
-            val notifier = MessageNotifier(context)
+        applicationScope.launch {
             try {
                 for ((address, payload) in grouped) {
                     val (bodyBuilder, timestamp) = payload
                     val body = bodyBuilder.toString()
-                    val id = app.repository.persistIncoming(
+                    val id = repository.persistIncoming(
                         address = address,
                         body = body,
                         timestamp = if (timestamp > 0) timestamp else System.currentTimeMillis(),
                         subscriptionId = subscriptionId,
                     )
                     if (id > 0) {
-                        val conversation = app.repository.ensureConversation(address)
+                        val conversation = repository.ensureConversation(address)
                         notifier.notifyIncoming(conversation.id, address, body)
                     }
                 }

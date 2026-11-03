@@ -1,10 +1,15 @@
 package com.sms.messages.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.sms.messages.data.SettingsRepository
+import com.sms.messages.data.SmsRepository
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.sms.messages.R
-import com.sms.messages.SmsApp
 import com.sms.messages.data.AppSettings
 import com.sms.messages.data.Contact
 import com.sms.messages.data.TemplateEntity
@@ -34,8 +39,11 @@ data class ComposeUiState(
     val scheduledAt: Long? = null,
 )
 
-class ComposeMessageViewModel(
-    private val app: SmsApp,
+@HiltViewModel
+class ComposeMessageViewModel @Inject constructor(
+    private val repository: SmsRepository,
+    private val settingsRepository: SettingsRepository,
+    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -53,7 +61,7 @@ class ComposeMessageViewModel(
 
     val uiState: StateFlow<ComposeUiState> = combine(
         recipients, query, body, suggestions,
-        app.repository.observeTemplates(), settings,
+        repository.observeTemplates(), settings,
         sending, error, scheduledAt,
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -71,9 +79,9 @@ class ComposeMessageViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ComposeUiState())
 
     init {
-        viewModelScope.launch { app.settings.settings.collect { settings.value = it } }
+        viewModelScope.launch { settingsRepository.settings.collect { settings.value = it } }
         viewModelScope.launch {
-            allContacts = app.repository.loadContacts()
+            allContacts = repository.loadContacts()
             query.value = ""
             suggestions.value = allContacts.take(40).map { it.toSuggestion() }
         }
@@ -106,7 +114,7 @@ class ComposeMessageViewModel(
 
     fun addRecipient(number: String, name: String?) {
         if (!PhoneNumbers.isValid(number)) {
-            error.value = app.getString(R.string.invalid_recipient)
+            error.value = context.getString(R.string.invalid_recipient)
             return
         }
         val normalized = PhoneNumbers.normalize(number).ifEmpty { number.trim() }
@@ -127,7 +135,7 @@ class ComposeMessageViewModel(
 
     fun applyTemplate(template: TemplateEntity) {
         body.value = template.body
-        viewModelScope.launch { app.repository.markTemplateUsed(template.id) }
+        viewModelScope.launch { repository.markTemplateUsed(template.id) }
     }
 
     fun schedule(atMillis: Long?) {
@@ -137,11 +145,11 @@ class ComposeMessageViewModel(
     fun send() {
         val text = body.value.trim()
         if (recipients.value.isEmpty()) {
-            error.value = app.getString(R.string.error_add_recipient)
+            error.value = context.getString(R.string.error_add_recipient)
             return
         }
         if (text.isEmpty() && scheduledAt.value == null) {
-            error.value = app.getString(R.string.error_message_empty)
+            error.value = context.getString(R.string.error_message_empty)
             return
         }
         val targets = recipients.value.map { it.number }
@@ -154,7 +162,7 @@ class ComposeMessageViewModel(
                 val outgoing = if (signature.isEmpty()) text else "$text\n$signature"
                 if (scheduledTime != null) {
                     targets.forEach { target ->
-                        app.repository.scheduleMessage(
+                        repository.scheduleMessage(
                             address = target,
                             body = outgoing,
                             atMillis = scheduledTime,
@@ -164,7 +172,7 @@ class ComposeMessageViewModel(
                     scheduledAt.value = null
                 } else {
                     targets.forEach { target ->
-                        app.repository.sendMessage(
+                        repository.sendMessage(
                             address = target,
                             body = outgoing,
                             subscriptionId = settingsValue.defaultSubscriptionId,
@@ -176,7 +184,7 @@ class ComposeMessageViewModel(
                 recipients.value = emptyList()
                 error.value = null
             } catch (t: Throwable) {
-                error.value = t.message ?: app.getString(R.string.error_unable_send)
+                error.value = t.message ?: context.getString(R.string.error_unable_send)
             } finally {
                 sending.value = false
             }

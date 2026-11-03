@@ -52,12 +52,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sms.messages.R
 import com.sms.messages.ui.components.EmptyState
 import com.sms.messages.ui.components.InitialAvatar
 import com.sms.messages.ui.viewmodel.ComposeMessageViewModel
-import com.sms.messages.ui.viewmodel.VmFactory
 import com.sms.messages.util.TimeFormat
 import java.util.Calendar
 
@@ -65,7 +64,7 @@ import java.util.Calendar
 @Composable
 fun ComposeMessageScreen(
     onBack: () -> Unit,
-    viewModel: ComposeMessageViewModel = viewModel(factory = VmFactory.Factory),
+    viewModel: ComposeMessageViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
@@ -321,7 +320,7 @@ fun ComposeMessageScreen(
 fun SearchScreen(
     onBack: () -> Unit,
     onOpenConversation: (Long) -> Unit,
-    viewModel: com.sms.messages.ui.viewmodel.SearchViewModel = viewModel(factory = VmFactory.Factory),
+    viewModel: com.sms.messages.ui.viewmodel.SearchViewModel = hiltViewModel(),
 ) {
     val results by viewModel.results.collectAsStateWithLifecycle()
     val query by viewModel.currentQuery.collectAsStateWithLifecycle()
